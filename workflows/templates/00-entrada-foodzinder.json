@@ -7,11 +7,11 @@
       "name": "Webhook Foodzinder",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [0, 400],
+      "position": [0, 500],
       "webhookId": "foodzinder-entrada"
     },
-    { "parameters": { "jsCode": "{{code:verificar-firma}}" }, "id": "a0000000-0000-4000-8000-000000000002", "name": "verificar-firma", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [240, 400] },
-    { "parameters": { "jsCode": "{{code:normalizar-evento}}" }, "id": "a0000000-0000-4000-8000-000000000003", "name": "normalizar-evento", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 400] },
+    { "parameters": { "jsCode": "{{code:verificar-firma}}" }, "id": "a0000000-0000-4000-8000-000000000002", "name": "verificar-firma", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [240, 500] },
+    { "parameters": { "jsCode": "{{code:normalizar-evento}}" }, "id": "a0000000-0000-4000-8000-000000000003", "name": "normalizar-evento", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 500] },
     {
       "parameters": {
         "rules": {
@@ -29,14 +29,14 @@
       "name": "por-evento",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [720, 400]
+      "position": [720, 500]
     },
 
-    { "parameters": { "jsCode": "{{code:preparar-resumen}}" }, "id": "a0000000-0000-4000-8000-000000000101", "name": "preparar-resumen", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1000, 120] },
+    { "parameters": { "jsCode": "{{code:preparar-resumen}}" }, "id": "a0000000-0000-4000-8000-000000000101", "name": "preparar-resumen", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1000, 100] },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-2.5-flash' }}:generateContent",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-3.6-flash' }}:generateContent",
         "sendHeaders": true,
         "headerParameters": { "parameters": [{ "name": "x-goog-api-key", "value": "={{ $env.GOOGLE_AI_API_KEY }}" }] },
         "sendBody": true,
@@ -48,10 +48,10 @@
       "name": "gemini-resumen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1240, 120],
+      "position": [1240, 100],
       "onError": "continueRegularOutput"
     },
-    { "parameters": { "jsCode": "{{code:mensaje-admin}}" }, "id": "a0000000-0000-4000-8000-000000000103", "name": "mensaje-admin", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1480, 120] },
+    { "parameters": { "jsCode": "{{code:mensaje-admin}}" }, "id": "a0000000-0000-4000-8000-000000000103", "name": "mensaje-admin", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1480, 100] },
     {
       "parameters": {
         "method": "POST",
@@ -65,13 +65,94 @@
       "name": "telegram-admin",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1720, 120]
+      "position": [1720, 100]
     },
 
-    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000013", "name": "→ 02 bienvenida (fase 3)", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1000, 400] },
-    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000014", "name": "→ 03 reseña (fase 3)", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1000, 520] },
-    { "parameters": { "jsCode": "{{code:registrar}}" }, "id": "a0000000-0000-4000-8000-000000000015", "name": "registrar", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1960, 400] },
-    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000016", "name": "otros eventos (sin acción)", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1000, 760] }
+    {
+      "parameters": {
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/restaurants/{{ $json.data.slug }}",
+        "options": { "timeout": 30000, "response": { "response": { "neverError": true } } }
+      },
+      "id": "a0000000-0000-4000-8000-000000000201",
+      "name": "ficha-publica",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 400],
+      "onError": "continueRegularOutput"
+    },
+    { "parameters": { "jsCode": "{{code:preparar-consejos}}" }, "id": "a0000000-0000-4000-8000-000000000202", "name": "preparar-consejos", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1240, 400] },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-3.6-flash' }}:generateContent",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-goog-api-key", "value": "={{ $env.GOOGLE_AI_API_KEY }}" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.geminiBody) }}",
+        "options": { "timeout": 20000 }
+      },
+      "id": "a0000000-0000-4000-8000-000000000203",
+      "name": "gemini-consejos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 400],
+      "onError": "continueRegularOutput"
+    },
+    { "parameters": { "jsCode": "{{code:email-bienvenida}}" }, "id": "a0000000-0000-4000-8000-000000000204", "name": "email-bienvenida", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1720, 400] },
+    { "parameters": { "jsCode": "{{code:enviar-email}}" }, "id": "a0000000-0000-4000-8000-000000000205", "name": "enviar-email-bienvenida", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1960, 400] },
+
+    { "parameters": { "jsCode": "{{code:preparar-respuesta}}" }, "id": "a0000000-0000-4000-8000-000000000301", "name": "preparar-respuesta", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1000, 700] },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-3.6-flash' }}:generateContent",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-goog-api-key", "value": "={{ $env.GOOGLE_AI_API_KEY }}" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.geminiBody) }}",
+        "options": { "timeout": 20000 }
+      },
+      "id": "a0000000-0000-4000-8000-000000000302",
+      "name": "gemini-respuesta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1240, 700],
+      "onError": "continueRegularOutput"
+    },
+    { "parameters": { "jsCode": "{{code:email-resena}}" }, "id": "a0000000-0000-4000-8000-000000000303", "name": "email-resena", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1480, 700] },
+    { "parameters": { "jsCode": "{{code:enviar-email}}" }, "id": "a0000000-0000-4000-8000-000000000304", "name": "enviar-email-resena", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1720, 700] },
+    {
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "g1", "leftValue": "={{ $json.grave }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }], "combinator": "and" },
+        "options": {}
+      },
+      "id": "a0000000-0000-4000-8000-000000000305",
+      "name": "¿grave?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1960, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.telegramBody) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "a0000000-0000-4000-8000-000000000306",
+      "name": "telegram-escalado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 620],
+      "onError": "continueRegularOutput"
+    },
+
+    { "parameters": { "jsCode": "{{code:registrar}}" }, "id": "a0000000-0000-4000-8000-000000000015", "name": "registrar", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [2440, 500] },
+    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000016", "name": "otros eventos (sin acción)", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1000, 960] }
   ],
   "connections": {
     "Webhook Foodzinder": { "main": [[{ "node": "verificar-firma", "type": "main", "index": 0 }]] },
@@ -81,8 +162,8 @@
       "main": [
         [{ "node": "preparar-resumen", "type": "main", "index": 0 }],
         [{ "node": "preparar-resumen", "type": "main", "index": 0 }],
-        [{ "node": "→ 02 bienvenida (fase 3)", "type": "main", "index": 0 }],
-        [{ "node": "→ 03 reseña (fase 3)", "type": "main", "index": 0 }],
+        [{ "node": "ficha-publica", "type": "main", "index": 0 }],
+        [{ "node": "preparar-respuesta", "type": "main", "index": 0 }],
         [{ "node": "registrar", "type": "main", "index": 0 }],
         [{ "node": "otros eventos (sin acción)", "type": "main", "index": 0 }]
       ]
@@ -90,7 +171,18 @@
     "preparar-resumen": { "main": [[{ "node": "gemini-resumen", "type": "main", "index": 0 }]] },
     "gemini-resumen": { "main": [[{ "node": "mensaje-admin", "type": "main", "index": 0 }]] },
     "mensaje-admin": { "main": [[{ "node": "telegram-admin", "type": "main", "index": 0 }]] },
-    "telegram-admin": { "main": [[{ "node": "registrar", "type": "main", "index": 0 }]] }
+    "telegram-admin": { "main": [[{ "node": "registrar", "type": "main", "index": 0 }]] },
+    "ficha-publica": { "main": [[{ "node": "preparar-consejos", "type": "main", "index": 0 }]] },
+    "preparar-consejos": { "main": [[{ "node": "gemini-consejos", "type": "main", "index": 0 }]] },
+    "gemini-consejos": { "main": [[{ "node": "email-bienvenida", "type": "main", "index": 0 }]] },
+    "email-bienvenida": { "main": [[{ "node": "enviar-email-bienvenida", "type": "main", "index": 0 }]] },
+    "enviar-email-bienvenida": { "main": [[{ "node": "registrar", "type": "main", "index": 0 }]] },
+    "preparar-respuesta": { "main": [[{ "node": "gemini-respuesta", "type": "main", "index": 0 }]] },
+    "gemini-respuesta": { "main": [[{ "node": "email-resena", "type": "main", "index": 0 }]] },
+    "email-resena": { "main": [[{ "node": "enviar-email-resena", "type": "main", "index": 0 }]] },
+    "enviar-email-resena": { "main": [[{ "node": "¿grave?", "type": "main", "index": 0 }]] },
+    "¿grave?": { "main": [[{ "node": "telegram-escalado", "type": "main", "index": 0 }], [{ "node": "registrar", "type": "main", "index": 0 }]] },
+    "telegram-escalado": { "main": [[{ "node": "registrar", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1", "saveManualExecutions": true, "timezone": "Europe/Madrid" },
   "active": false,

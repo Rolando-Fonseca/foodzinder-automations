@@ -24,6 +24,8 @@ services:
       N8N_PORT: 5678
       # Permite require('crypto') en nodos Code (verificación de firma HMAC)
       NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      # nodemailer viene con n8n: permite enviar correo desde un nodo Code con las variables SMTP_*
+      NODE_FUNCTION_ALLOW_EXTERNAL: nodemailer
       N8N_RUNNERS_ENABLED: "true"
       N8N_DIAGNOSTICS_ENABLED: "false"
     depends_on:

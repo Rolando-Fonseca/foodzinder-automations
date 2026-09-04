@@ -20,7 +20,7 @@ describe("shared/gemini", () => {
   it("construye la petición con temperatura, tokens y JSON opcional", () => {
     const b = buildGeminiRequest("hola", { temperature: 0.2, maxOutputTokens: 100, json: true });
     expect(b.contents[0].parts[0].text).toBe("hola");
-    expect(b.generationConfig).toEqual({ temperature: 0.2, maxOutputTokens: 100, responseMimeType: "application/json" });
+    expect(b.generationConfig).toEqual({ temperature: 0.2, maxOutputTokens: 100, responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "minimal" } });
   });
   it("parsea texto y JSON con vallas, y devuelve null ante errores", () => {
     expect(parseGeminiText(gemini(" hola ").json)).toBe("hola");

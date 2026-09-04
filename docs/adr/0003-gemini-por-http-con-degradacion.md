@@ -9,10 +9,14 @@ El módulo pide IA dentro de las automatizaciones. n8n ofrece nodos de LangChain
 
 ## Decisión
 
-- Llamar a Gemini con el nodo **HTTP Request** al endpoint `generateContent`, con el modelo en la variable `GEMINI_MODEL` (por defecto `gemini-2.5-flash`).
+- Llamar a Gemini con el nodo **HTTP Request** al endpoint `generateContent`, con el modelo en la variable `GEMINI_MODEL` (por defecto `gemini-3.6-flash`).
 - Los prompts se construyen en `src/lib/prompts.mjs`, con tests que comprueban que incluyen los datos del evento y las instrucciones fijas: español, sin inventar datos, longitud máxima, formato de salida.
 - Temperatura baja (0,2 a 0,5 según el flujo), `maxOutputTokens` acotado, timeout de 20 segundos.
 - **Degradación:** si la llamada falla o excede el tiempo, el flujo continúa con los datos crudos. El aviso llega igual; solo pierde el texto generado.
+
+## Nota de implementación (2026-09-04)
+
+El primer modelo elegido, `gemini-2.5-flash`, ya no está disponible para claves nuevas: la API devuelve 404 y recomienda `gemini-3.6-flash`. Los modelos Gemini 3 razonan antes de responder y ese razonamiento consume `maxOutputTokens`: con 50 tokens la respuesta llegó vacía (`finishReason: MAX_TOKENS`, `thoughtsTokenCount: 47`). `thinkingBudget: 0` no es válido en Gemini 3; sí lo es `thinkingConfig.thinkingLevel: "minimal"`, que deja el presupuesto entero para la respuesta. Queda fijado en `src/shared/gemini.js`. La degradación funcionó tal cual estaba diseñada: el aviso al administrador salió sin resumen y con los datos crudos.
 
 ## Consecuencias
 

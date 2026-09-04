@@ -7,6 +7,9 @@ function buildGeminiRequest(prompt, opts) {
   const generationConfig = {
     temperature: o.temperature == null ? 0.3 : o.temperature,
     maxOutputTokens: o.maxOutputTokens || 400,
+    // Gemini 3 razona antes de responder y ese razonamiento consume maxOutputTokens:
+    // con "minimal" no gasta nada en pensar y el presupuesto va entero a la respuesta.
+    thinkingConfig: { thinkingLevel: o.thinkingLevel || "minimal" },
   };
   if (o.json) generationConfig.responseMimeType = "application/json";
   return {

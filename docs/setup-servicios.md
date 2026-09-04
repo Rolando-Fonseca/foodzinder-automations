@@ -32,14 +32,14 @@ Crear el fichero copiando `.env.example` y editándolo con el editor de texto o 
 
 ## 4. Gemini
 
-`GOOGLE_AI_API_KEY`: la misma clave que ya está en `C:\Users\liand\Documents\Founder IA\claude-banana\.env`. `GEMINI_MODEL` se deja en `gemini-2.5-flash`.
+`GOOGLE_AI_API_KEY`: la misma clave que ya está en `C:\Users\liand\Documents\Founder IA\claude-banana\.env`. `GEMINI_MODEL` se deja en `gemini-3.6-flash`.
 
 ## 5. Render + Neon (Fase 5)
 
 1. En Neon, proyecto `foodzinder` → **Databases → New database** → nombre `n8n`. Copiar host, usuario y contraseña de la cadena de conexión **sin** pooling.
 2. En Render, **New → Blueprint**, conectar el repo `foodzinder-automations`; lee `render.yaml`. Rellenar las variables marcadas como `sync: false` con los valores del `.env` (los de Neon en `DB_POSTGRESDB_*`).
 3. Cuando arranque, abrir `https://foodzinder-n8n.onrender.com`, crear el usuario propietario e importar los JSON de `workflows/`.
-4. Crear en n8n las credenciales de Telegram y SMTP (los nodos las piden) y activar los flujos.
+4. Activar los flujos. No hay que crear credenciales en n8n: Telegram, Gemini y el correo se llaman con las variables de entorno. Registrar el webhook del bot con `node scripts/telegram-set-webhook.mjs --url https://foodzinder-n8n.onrender.com/webhook/telegram`.
 5. En Vercel (Foodzinder), `WEBHOOK_URLS = https://foodzinder-n8n.onrender.com/webhook/foodzinder`, Redeploy, y "Enviar evento de prueba" desde `/dashboard/admin/webhooks`.
 
 ## 6. Túnel temporal para probar en local con eventos reales (Fase 1)
