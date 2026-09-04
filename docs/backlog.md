@@ -35,13 +35,14 @@ Verificación pendiente: alta de restaurante en Foodzinder → Telegram → Apro
 
 ## Fase 3: flujos 2 y 3 con IA
 
-- [ ] SMTP configurado (guía).
-- [ ] `02-bienvenida-dueno` con consejos generados a partir de la carta real.
-- [ ] `03-resena-negativa` con borrador de respuesta, clasificación y escalado a Telegram si es grave.
-- [ ] Tests de prompts y de los correos (contienen URL, nombre, notas).
-- [ ] Degradación probada: con `GOOGLE_AI_API_KEY` inválida, los correos llegan sin la parte de IA.
+- [ ] SMTP configurado (guía, apartado 3). Pendiente del usuario.
+- [x] Rama 02: ficha pública por API, consejos generados con Gemini a partir de la carta real, correo con URL pública y enlace al panel.
+- [x] Rama 03: solo media < 3, clasificación y borrador en JSON, correo al dueño, escalado a Telegram si es higiene o alérgenos.
+- [x] Correo desde un nodo Code con nodemailer y variables `SMTP_*`; si faltan, el flujo termina con "omitido: SMTP sin configurar" en vez de fallar.
+- [x] 10 tests nuevos: plantilla de correo, ramas 02 y 03 con y sin IA, escalado, envío.
+- [x] Degradación probada de verdad: con `gemini-2.5-flash` retirado, los avisos salieron con datos crudos; tras pasar a `gemini-3.6-flash` con `thinkingLevel: minimal`, las tres ramas terminan con IA.
 
-Verificación: reseña con media 2 en la demo → correo con borrador; con queja de alérgenos → también Telegram.
+Verificación hecha en local con eventos firmados: alta → mensaje con resumen de IA (Telegram pendiente de token); aprobación → correo construido con consejos (envío omitido sin SMTP); reseña de alérgenos con media 1,8 → categoría `alergenos`, marcada grave, correo y escalado preparados.
 
 ## Fase 4: informe semanal
 

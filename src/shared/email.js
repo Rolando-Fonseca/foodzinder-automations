@@ -16,7 +16,7 @@ function emailLayout(title, bodyHtml, footerHtml) {
 function htmlToText(html) {
   return String(html)
     .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|h1|h2|h3|li|tr)>/gi, "\n")
+    .replace(/<\/(p|div|h1|h2|h3|li|tr|blockquote|ul)>/gi, "\n")
     .replace(/<li[^>]*>/gi, "- ")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")

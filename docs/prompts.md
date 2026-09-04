@@ -22,6 +22,14 @@ Dos tropiezos de entorno, ninguno de código: el puerto 5678 ya lo ocupaba otro 
 
 **Lección:** en n8n también se puede trabajar como en cualquier otro proyecto, con tests, build e importación por CLI. El editor es para mirar, no para escribir.
 
+## Fases 2 y 3: la IA dentro del flujo, y la primera vez que la degradación sirvió de verdad
+
+Se escribieron primero los prompts y el código compartido (Gemini, Telegram, correo), con tests; después las ramas de cada flujo; y solo entonces se lanzaron eventos reales al n8n local. La primera ejecución completa llegó hasta Telegram con `aiUsed: false`: Gemini no había respondido y el aviso salió con los datos crudos, que era exactamente el comportamiento diseñado en el ADR-0003. Leyendo la respuesta guardada en la ejecución apareció la causa: `gemini-2.5-flash` retirado para claves nuevas. Con el modelo recomendado, la segunda sorpresa: respuesta vacía con `thoughtsTokenCount: 47`, porque Gemini 3 razona antes de contestar y gasta el presupuesto de salida. `thinkingLevel: "minimal"` lo resolvió.
+
+Con la IA funcionando, los tres textos generados se leyeron con ojos de usuario: el resumen para el administrador listaba justo los datos que faltaban en la ficha; los consejos al dueño citaban platos concretos de su carta sin alérgenos declarados; el borrador ante una queja de gluten reconocía el error sin excusas. Y un fallo de integración que los tests unitarios no podían ver: el nodo final de registro recibía la respuesta de Telegram, no el evento. Se corrigió leyendo el evento del nodo de normalización.
+
+**Lección:** la degradación hay que probarla con un fallo real, no solo con un test. Y el modelo, con la clave que se va a usar: los nombres de modelo caducan.
+
 ## Prompts dentro del producto
 
 Los prompts que se envían a Gemini viven en `src/lib/prompts.mjs`, no en los nodos, y tienen tests. Cada uno sigue la misma estructura:

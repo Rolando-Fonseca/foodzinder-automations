@@ -68,9 +68,14 @@ describe("nodo normalizar-evento", () => {
 
 describe("nodo registrar", () => {
   const run = loadNode("registrar");
-  it("resume en una línea", () => {
-    const out = run([{ json: { id: "evt-1", event: "review.created", action: "email-dueno", result: "enviado" } }], new Date("2026-09-04T10:00:00Z"));
-    expect(out[0].json.summary).toBe("review.created evt-1 -> email-dueno: enviado");
+  const ev = { json: { id: "evt-1", event: "review.created" } };
+  it("resume en una línea con el evento del nodo normalizar y el resultado del último nodo", () => {
+    const out = run([{ json: { action: "email-dueno", result: "enviado a x@y.z" } }], ev, new Date("2026-09-04T10:00:00Z"));
+    expect(out[0].json.summary).toBe("review.created evt-1 -> email-dueno: enviado a x@y.z");
     expect(out[0].json.loggedAt).toBe("2026-09-04T10:00:00.000Z");
+  });
+  it("cuando lo que llega es la respuesta de Telegram, no pierde el evento", () => {
+    expect(run([{ json: { ok: true, result: undefined } }], ev)[0].json.summary).toBe("review.created evt-1 -> sin acción: telegram ok");
+    expect(run([{ json: { error: { message: "Not Found" } } }], ev)[0].json.summary).toBe("review.created evt-1 -> sin acción: error: Not Found");
   });
 });

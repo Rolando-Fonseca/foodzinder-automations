@@ -70,6 +70,7 @@ describe("rama 03: reseña negativa", () => {
     expect(out.email.subject).toBe("Reseña con 2 sobre 5 en Casa Terral");
     expect(out.email.html).toContain("Gracias por contárnoslo…");
     expect(out.email.html).toContain("Servicio: <b>1</b>/5");
+    expect(out.email.text).toContain("Esperamos 40 minutos\n"); // el comentario no se pega con el título siguiente
   });
 
   it("queja de alérgenos: escala al administrador por Telegram y marca el asunto", () => {
