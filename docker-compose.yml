@@ -17,9 +17,11 @@ services:
   n8n:
     image: n8nio/n8n:latest
     ports:
-      - "${N8N_PORT:-5678}:5678"
+      # Puerto del host configurable; dentro del contenedor n8n siempre escucha en 5678
+      - "${N8N_HOST_PORT:-5679}:5678"
     env_file: .env
     environment:
+      N8N_PORT: 5678
       # Permite require('crypto') en nodos Code (verificación de firma HMAC)
       NODE_FUNCTION_ALLOW_BUILTIN: crypto
       N8N_RUNNERS_ENABLED: "true"

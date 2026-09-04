@@ -30,20 +30,27 @@ Requisitos: Docker y Node 22 (o Bun).
 
 ```bash
 cp .env.example .env        # rellenar según docs/setup-servicios.md
-npm run n8n:up              # n8n + Postgres en http://localhost:5678
+npm run n8n:up              # n8n + Postgres en http://localhost:5679 (el 5678 queda libre por si hay otro n8n)
 npm run build               # genera workflows/*.json desde src/nodes y las plantillas
 npm test                    # tests de los nodos
-npm run event -- restaurant.created   # envía un evento firmado al n8n local
+npm run event -- webhook.test            # evento firmado al n8n local: ejecución verde
+npm run event -- webhook.test --bad-signature   # firma incorrecta: ejecución roja en verificar-firma
 ```
 
-Importar los flujos: en n8n, **Workflows → Import from file** con cada JSON de `workflows/`.
+Importar los flujos: en n8n, **Workflows → Import from file** con cada JSON de `workflows/`, o por línea de comandos sin abrir el editor:
+
+```bash
+MSYS_NO_PATHCONV=1 docker compose cp workflows/00-entrada-foodzinder.json n8n:/tmp/00.json
+MSYS_NO_PATHCONV=1 docker compose exec -T n8n n8n import:workflow --input=/tmp/00.json
+docker compose exec -T n8n n8n update:workflow --id=<id> --active=true && docker compose restart n8n
+```
 
 ## Estado
 
 | Fase | Contenido | Estado |
 |------|-----------|--------|
-| 0 | Repo, documentación base, decisiones | En curso |
-| 1 | n8n local en Docker, verificación de firma, evento de prueba de extremo a extremo | Pendiente |
+| 0 | Repo, documentación base, decisiones | Hecha |
+| 1 | n8n local en Docker, verificación de firma, evento de prueba de extremo a extremo | Hecha |
 | 2 | Flujos 1 y 5 (aprobación asistida y demo despierta) | Pendiente |
 | 3 | Flujos 2 y 3 (bienvenida y reseña negativa) con IA | Pendiente |
 | 4 | Flujo 4 (informe semanal) | Pendiente |

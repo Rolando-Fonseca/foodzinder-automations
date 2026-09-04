@@ -6,20 +6,20 @@ Cada fase termina en commits atómicos y en una verificación concreta.
 
 - [x] Repo `foodzinder-automations` con `.gitignore`, `.env.example`, `docker-compose.yml`, `render.yaml`, Vitest.
 - [x] README, arquitectura, especificación de los cinco flujos, ADRs 0001 a 0004, guía de servicios, este backlog, registro de prompts, changelog.
-- [ ] Repositorio público en GitHub.
+- [x] Repositorio público en GitHub: https://github.com/Rolando-Fonseca/foodzinder-automations
 
-Verificación: `git status` limpio; los documentos describen el objetivo, no lo hecho.
+Verificación hecha: `git status` limpio; los documentos describen el objetivo, no lo hecho.
 
 ## Fase 1: n8n local y evento de extremo a extremo
 
-- [ ] `.env` local con `N8N_ENCRYPTION_KEY`, contraseña del editor y el `WEBHOOK_SECRET` de Foodzinder.
-- [ ] `docker compose up` con n8n y Postgres; editor accesible en `http://localhost:5678`.
-- [ ] `src/lib/signature.mjs` y `src/nodes/verificar-firma.js` con tests (firma válida, inválida, ausente, cuerpo alterado).
-- [ ] `scripts/build-workflows.mjs` y `scripts/send-event.mjs`.
-- [ ] Flujo `00-entrada-foodzinder` importado; `npm run event -- webhook.test` produce una ejecución verde y `--bad-signature` una roja.
-- [ ] Exponer el n8n local a Foodzinder para una prueba real: túnel temporal (`cloudflared` o `ngrok`) en `WEBHOOK_URLS` de Vercel y "Enviar evento de prueba" desde el panel de Foodzinder.
+- [x] `.env` local con `N8N_ENCRYPTION_KEY` y las claves de Foodzinder copiadas de su `.env`.
+- [x] `docker compose up` con n8n 1.95 y Postgres 17; editor en `http://localhost:5679`. Dos tropiezos documentados en `docs/prompts.md`: el 5678 ya lo ocupaba otro n8n, y pasar `N8N_PORT` al contenedor lo hacía chocar con su Task Broker.
+- [x] `src/lib/signature.mjs`, `src/nodes/verificar-firma.js`, `normalizar-evento.js` y `registrar.js` con 9 tests que ejecutan el mismo código que se inyecta en los JSON.
+- [x] `scripts/build-workflows.mjs` (con `--check`) y `scripts/send-event.mjs` con cuerpos de ejemplo de todos los eventos.
+- [x] Flujo `00-entrada-foodzinder` importado y activo por CLI; `webhook.test` firmado → verde; `--bad-signature` → rojo en `verificar-firma` con "Firma inválida"; `restaurant.created` → enrutado por el Switch.
+- [ ] Prueba con un evento real de Foodzinder a través de un túnel temporal (opcional: la Fase 5 lo cubre con la URL pública).
 
-Verificación: ejecución en n8n con el evento real de Foodzinder y firma verificada.
+Verificación hecha: tres ejecuciones en n8n con el resultado esperado cada una.
 
 ## Fase 2: flujos 1 y 5
 

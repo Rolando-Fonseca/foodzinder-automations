@@ -14,6 +14,14 @@ De ahí salieron las cuatro decisiones (ADRs) antes de abrir el editor de n8n: d
 
 **Lección:** cuando un proyecto consume otro, el contrato del primero es el enunciado del segundo. Leerlo entero antes de decidir ahorra rediseñar.
 
+## Fase 1: el primer evento de extremo a extremo
+
+Antes de abrir el editor de n8n se escribió el código de la firma con sus tests, cargando en el test el mismo fichero que se inyecta en el JSON (`tests/helpers.mjs` quita la línea de invocación de n8n y evalúa el resto). Después se importó y activó el flujo por línea de comandos, sin tocar el editor, y se lanzaron tres eventos con el script: firmado, con firma incorrecta y de otro tipo. Cada uno acabó donde debía.
+
+Dos tropiezos de entorno, ninguno de código: el puerto 5678 ya lo ocupaba otro n8n del usuario (se respetó y el contenedor usa el 5679), y pasar `N8N_PORT` al contenedor lo hacía chocar con su propio Task Broker, que por defecto usa el 5679. Los logs del contenedor lo decían en una línea.
+
+**Lección:** en n8n también se puede trabajar como en cualquier otro proyecto, con tests, build e importación por CLI. El editor es para mirar, no para escribir.
+
 ## Prompts dentro del producto
 
 Los prompts que se envían a Gemini viven en `src/lib/prompts.mjs`, no en los nodos, y tienen tests. Cada uno sigue la misma estructura:

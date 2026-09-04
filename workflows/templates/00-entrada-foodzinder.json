@@ -1,0 +1,86 @@
+{
+  "name": "00 · Entrada Foodzinder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodzinder",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": { "rawBody": true }
+      },
+      "id": "a0000000-0000-4000-8000-000000000001",
+      "name": "Webhook Foodzinder",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "foodzinder-entrada"
+    },
+    {
+      "parameters": { "jsCode": "{{code:verificar-firma}}" },
+      "id": "a0000000-0000-4000-8000-000000000002",
+      "name": "verificar-firma",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": { "jsCode": "{{code:normalizar-evento}}" },
+      "id": "a0000000-0000-4000-8000-000000000003",
+      "name": "normalizar-evento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "c1", "leftValue": "={{ $json.event }}", "rightValue": "restaurant.created", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" }, "renameOutput": true, "outputKey": "restaurant.created" },
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "c2", "leftValue": "={{ $json.event }}", "rightValue": "restaurant.resubmitted", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" }, "renameOutput": true, "outputKey": "restaurant.resubmitted" },
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "c3", "leftValue": "={{ $json.event }}", "rightValue": "restaurant.approved", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" }, "renameOutput": true, "outputKey": "restaurant.approved" },
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "c4", "leftValue": "={{ $json.event }}", "rightValue": "review.created", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" }, "renameOutput": true, "outputKey": "review.created" },
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "c5", "leftValue": "={{ $json.event }}", "rightValue": "webhook.test", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" }, "renameOutput": true, "outputKey": "webhook.test" }
+          ]
+        },
+        "options": { "fallbackOutput": "extra", "renameFallbackOutput": "otros" }
+      },
+      "id": "a0000000-0000-4000-8000-000000000004",
+      "name": "por-evento",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [780, 300]
+    },
+    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000011", "name": "→ 01 aprobación asistida", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1080, 60] },
+    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000012", "name": "→ 01 aprobación (reenvío)", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1080, 180] },
+    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000013", "name": "→ 02 bienvenida", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1080, 300] },
+    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000014", "name": "→ 03 reseña", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1080, 420] },
+    {
+      "parameters": { "jsCode": "{{code:registrar}}" },
+      "id": "a0000000-0000-4000-8000-000000000015",
+      "name": "registrar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 540]
+    },
+    { "parameters": {}, "id": "a0000000-0000-4000-8000-000000000016", "name": "otros eventos (sin acción)", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [1080, 660] }
+  ],
+  "connections": {
+    "Webhook Foodzinder": { "main": [[{ "node": "verificar-firma", "type": "main", "index": 0 }]] },
+    "verificar-firma": { "main": [[{ "node": "normalizar-evento", "type": "main", "index": 0 }]] },
+    "normalizar-evento": { "main": [[{ "node": "por-evento", "type": "main", "index": 0 }]] },
+    "por-evento": {
+      "main": [
+        [{ "node": "→ 01 aprobación asistida", "type": "main", "index": 0 }],
+        [{ "node": "→ 01 aprobación (reenvío)", "type": "main", "index": 0 }],
+        [{ "node": "→ 02 bienvenida", "type": "main", "index": 0 }],
+        [{ "node": "→ 03 reseña", "type": "main", "index": 0 }],
+        [{ "node": "registrar", "type": "main", "index": 0 }],
+        [{ "node": "otros eventos (sin acción)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true, "timezone": "Europe/Madrid" },
+  "active": false,
+  "tags": [{ "name": "foodzinder" }]
+}
