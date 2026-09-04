@@ -1,0 +1,20 @@
+{
+  "name": "foodzinder-automations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "P5: automatizaciones con n8n e IA sobre los eventos y la API de Foodzinder (P4)",
+  "scripts": {
+    "build": "node scripts/build-workflows.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "n8n:up": "docker compose up -d",
+    "n8n:down": "docker compose down",
+    "n8n:logs": "docker compose logs -f n8n",
+    "event": "node scripts/send-event.mjs",
+    "check": "node scripts/build-workflows.mjs --check"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.0"
+  }
+}

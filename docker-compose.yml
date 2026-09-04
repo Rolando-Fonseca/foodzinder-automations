@@ -1,0 +1,36 @@
+# n8n en local con Postgres. Variables en .env (copiar de .env.example).
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_POSTGRESDB_USER:-n8n}
+      POSTGRES_PASSWORD: ${DB_POSTGRESDB_PASSWORD:-n8n_dev}
+      POSTGRES_DB: ${DB_POSTGRESDB_DATABASE:-n8n}
+    volumes:
+      - n8n_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_POSTGRESDB_USER:-n8n}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    env_file: .env
+    environment:
+      # Permite require('crypto') en nodos Code (verificación de firma HMAC)
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+
+volumes:
+  n8n_postgres:
+  n8n_data:

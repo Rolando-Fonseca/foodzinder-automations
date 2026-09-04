@@ -1,0 +1,70 @@
+# Blueprint de Render: n8n con la base de datos en Neon (Render free no tiene disco persistente).
+# Las variables marcadas sync:false se rellenan en el panel de Render al crear el servicio.
+services:
+  - type: web
+    name: foodzinder-n8n
+    runtime: image
+    image:
+      url: docker.io/n8nio/n8n:latest
+    plan: free
+    region: frankfurt
+    healthCheckPath: /healthz
+    envVars:
+      - key: N8N_PORT
+        value: "10000"
+      - key: N8N_PROTOCOL
+        value: https
+      - key: N8N_HOST
+        value: foodzinder-n8n.onrender.com
+      - key: WEBHOOK_URL
+        value: https://foodzinder-n8n.onrender.com/
+      - key: GENERIC_TIMEZONE
+        value: Europe/Madrid
+      - key: NODE_FUNCTION_ALLOW_BUILTIN
+        value: crypto
+      - key: N8N_RUNNERS_ENABLED
+        value: "true"
+      - key: N8N_DIAGNOSTICS_ENABLED
+        value: "false"
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_SSL_ENABLED
+        value: "true"
+      - key: DB_POSTGRESDB_SSL_REJECT_UNAUTHORIZED
+        value: "false"
+      - key: DB_POSTGRESDB_HOST
+        sync: false
+      - key: DB_POSTGRESDB_PORT
+        value: "5432"
+      - key: DB_POSTGRESDB_DATABASE
+        sync: false
+      - key: DB_POSTGRESDB_USER
+        sync: false
+      - key: DB_POSTGRESDB_PASSWORD
+        sync: false
+      - key: N8N_ENCRYPTION_KEY
+        sync: false
+      - key: FOODZINDER_BASE_URL
+        value: https://foodzinder.vercel.app
+      - key: FOODZINDER_API_KEY
+        sync: false
+      - key: FOODZINDER_WEBHOOK_SECRET
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        value: Foodzinder <no-reply@foodzinder.dev>
+      - key: GOOGLE_AI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
