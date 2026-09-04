@@ -51,11 +51,13 @@ docker compose exec -T n8n n8n update:workflow --id=<id> --active=true && docker
 |------|-----------|--------|
 | 0 | Repo, documentación base, decisiones | Hecha |
 | 1 | n8n local en Docker, verificación de firma, evento de prueba de extremo a extremo | Hecha |
-| 2 | Flujos 1 y 5 (aprobación asistida y demo despierta) | Pendiente |
-| 3 | Flujos 2 y 3 (bienvenida y reseña negativa) con IA | Pendiente |
-| 4 | Flujo 4 (informe semanal) | Pendiente |
-| 5 | Despliegue en Render con Neon, Foodzinder apuntando al n8n público | Pendiente |
-| 6 | Demo y presentación | Pendiente |
+| 2 | Flujos 1 y 5 (aprobación asistida y demo despierta) | Hecha, verificada en local hasta Telegram |
+| 3 | Flujos 2 y 3 (bienvenida y reseña negativa) con IA | Hecha, verificada en local hasta el envío de correo |
+| 4 | Flujo 4 (informe semanal) | Hecha, informe generado con cifras reales |
+| 5 | Despliegue en Render con Neon, Foodzinder apuntando al n8n público | Pendiente (bot de Telegram, Gmail, Neon y Render) |
+| 6 | Demo y presentación | Guion en [docs/demo.md](docs/demo.md) |
+
+Tests: 45 sobre el mismo código que corre en los nodos. CI: [GitHub Actions](https://github.com/Rolando-Fonseca/foodzinder-automations/actions).
 
 Detalle en [docs/backlog.md](docs/backlog.md).
 

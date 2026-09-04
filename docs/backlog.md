@@ -46,10 +46,10 @@ Verificación hecha en local con eventos firmados: alta → mensaje con resumen 
 
 ## Fase 4: informe semanal
 
-- [ ] `04-informe-semanal` con cron, dos llamadas a la API y redacción.
-- [ ] Test del prompt con cifras y del troceado a 4.000 caracteres.
+- [x] `04-informe-semanal` con cron (lunes 8:00) y disparador manual `POST /webhook/informe`; tres llamadas a la API privada (estadísticas, reseñas de la semana, pendientes), redacción con Gemini y envío troceado a Telegram.
+- [x] 6 tests: prompt con cifras, degradación sin IA, troceado a 4.000 caracteres, llamadas fallidas anotadas en el informe.
 
-Verificación: ejecución manual → informe cuyas cifras coinciden con `/dashboard/admin`.
+Verificación hecha: disparo manual en local → informe redactado con las cifras reales de Foodzinder (usuarios, restaurantes por estado, reseñas, webhooks) y la lista de pendientes con enlace al panel. Envío a Telegram pendiente de token.
 
 ## Fase 5: despliegue
 

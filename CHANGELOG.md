@@ -5,6 +5,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/). Vers
 ## [Unreleased]
 
 ### Añadido
+- Informe semanal (flujo 04): cron de los lunes y disparador manual, cifras y reseñas por la API privada, redacción con Gemini y envío a Telegram por partes.
 - Bienvenida al dueño (rama 02) con consejos generados a partir de la carta real, y reseña negativa (rama 03) con clasificación, borrador de respuesta y escalado al administrador si es grave. Correo por SMTP desde un nodo Code con nodemailer.
 
 ### Cambiado
