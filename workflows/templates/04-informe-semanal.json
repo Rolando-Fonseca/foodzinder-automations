@@ -1,0 +1,112 @@
+{
+  "name": "04 · Informe semanal",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 8 * * 1" }] } },
+      "id": "d0000000-0000-4000-8000-000000000001",
+      "name": "Lunes 8:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 200]
+    },
+    {
+      "parameters": { "httpMethod": "POST", "path": "informe", "responseMode": "onReceived", "responseData": "allEntries", "options": {} },
+      "id": "d0000000-0000-4000-8000-000000000011",
+      "name": "A mano (POST /webhook/informe)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 420],
+      "webhookId": "foodzinder-informe"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/admin/stats?period=7d",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Api-Key", "value": "={{ $env.FOODZINDER_API_KEY }}" }] },
+        "options": { "timeout": 30000, "response": { "response": { "neverError": true } } }
+      },
+      "id": "d0000000-0000-4000-8000-000000000002",
+      "name": "api-stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 300],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/admin/reviews?since={{ new Date(Date.now() - 7 * 86400000).toISOString() }}&limit=100",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Api-Key", "value": "={{ $env.FOODZINDER_API_KEY }}" }] },
+        "options": { "timeout": 30000, "response": { "response": { "neverError": true } } }
+      },
+      "id": "d0000000-0000-4000-8000-000000000003",
+      "name": "api-reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/admin/restaurants?status=PENDING&limit=20",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Api-Key", "value": "={{ $env.FOODZINDER_API_KEY }}" }] },
+        "options": { "timeout": 30000, "response": { "response": { "neverError": true } } }
+      },
+      "id": "d0000000-0000-4000-8000-000000000004",
+      "name": "api-pendientes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 300],
+      "onError": "continueRegularOutput"
+    },
+    { "parameters": { "jsCode": "{{code:preparar-informe}}" }, "id": "d0000000-0000-4000-8000-000000000005", "name": "preparar-informe", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [960, 300] },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-3.6-flash' }}:generateContent",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-goog-api-key", "value": "={{ $env.GOOGLE_AI_API_KEY }}" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.geminiBody) }}",
+        "options": { "timeout": 25000 }
+      },
+      "id": "d0000000-0000-4000-8000-000000000006",
+      "name": "gemini-informe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 300],
+      "onError": "continueRegularOutput"
+    },
+    { "parameters": { "jsCode": "{{code:mensaje-informe}}" }, "id": "d0000000-0000-4000-8000-000000000007", "name": "mensaje-informe", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1440, 300] },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.telegramBody) }}",
+        "options": { "timeout": 15000, "batching": { "batch": { "batchSize": 1, "batchInterval": 400 } } }
+      },
+      "id": "d0000000-0000-4000-8000-000000000008",
+      "name": "telegram-informe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, 300]
+    }
+  ],
+  "connections": {
+    "Lunes 8:00": { "main": [[{ "node": "api-stats", "type": "main", "index": 0 }]] },
+    "A mano (POST /webhook/informe)": { "main": [[{ "node": "api-stats", "type": "main", "index": 0 }]] },
+    "api-stats": { "main": [[{ "node": "api-reviews", "type": "main", "index": 0 }]] },
+    "api-reviews": { "main": [[{ "node": "api-pendientes", "type": "main", "index": 0 }]] },
+    "api-pendientes": { "main": [[{ "node": "preparar-informe", "type": "main", "index": 0 }]] },
+    "preparar-informe": { "main": [[{ "node": "gemini-informe", "type": "main", "index": 0 }]] },
+    "gemini-informe": { "main": [[{ "node": "mensaje-informe", "type": "main", "index": 0 }]] },
+    "mensaje-informe": { "main": [[{ "node": "telegram-informe", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true, "timezone": "Europe/Madrid" },
+  "active": false,
+  "tags": [{ "name": "foodzinder" }]
+}
