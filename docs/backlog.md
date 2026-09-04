@@ -23,13 +23,15 @@ Verificación hecha: tres ejecuciones en n8n con el resultado esperado cada una.
 
 ## Fase 2: flujos 1 y 5
 
-- [ ] Bot de Telegram y chat del administrador (guía).
-- [ ] `01-aprobacion-asistida`: resumen con Gemini, mensaje con botones.
-- [ ] `01b-respuesta-telegram`: aprobar y rechazar con motivo llamando a la API privada.
-- [ ] `05-demo-despierta`.
-- [ ] Tests de los nodos: prompt de resumen, mensaje de Telegram, parseo del callback.
+- [ ] Bot de Telegram y chat del administrador (guía, apartado 2). Pendiente del usuario.
+- [x] Rama 01 en el flujo de entrada: prompt de resumen, Gemini por HTTP con degradación, mensaje con botones Aprobar/Rechazar.
+- [x] `01b-respuesta-telegram`: webhook del bot, parseo del callback con comprobación de chat, aprobar y rechazar con motivo (respuesta al mensaje del bot) contra la API privada, edición del mensaje original y respuesta al botón.
+- [x] `05-demo-despierta`: ping cada 10 minutos entre 8:00 y 22:00, aviso limitado a uno por hora.
+- [x] 29 tests: Gemini (petición y parseo), Telegram (HTML, teclado, troceado), prompts, y todos los nodos de 01, 01b y 05.
+- [x] Verificado en local con `restaurant.created`: la rama llega hasta Telegram con el resumen de Gemini construido; falla ahí a falta de token.
+- [ ] Con el bot creado: registrar el webhook (`scripts/telegram-set-webhook.mjs`), pulsar Aprobar y ver el cambio en Foodzinder.
 
-Verificación: alta de restaurante en Foodzinder → Telegram → Aprobar → ficha pública visible.
+Verificación pendiente: alta de restaurante en Foodzinder → Telegram → Aprobar → ficha pública visible.
 
 ## Fase 3: flujos 2 y 3 con IA
 
