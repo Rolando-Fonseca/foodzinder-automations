@@ -1,0 +1,138 @@
+{
+  "name": "01b · Respuesta Telegram (aprobar / rechazar)",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "telegram", "responseMode": "onReceived", "responseData": "allEntries", "options": {} },
+      "id": "b0000000-0000-4000-8000-000000000001",
+      "name": "Webhook Telegram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "foodzinder-telegram"
+    },
+    { "parameters": { "jsCode": "{{code:parsear-callback}}" }, "id": "b0000000-0000-4000-8000-000000000002", "name": "parsear-callback", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [240, 300] },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "k1", "leftValue": "={{ $json.valid && $json.kind === 'callback' && $json.action === 'approve' }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }], "combinator": "and" }, "renameOutput": true, "outputKey": "aprobar" },
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "k2", "leftValue": "={{ $json.valid && $json.kind === 'callback' && $json.action === 'reject' }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }], "combinator": "and" }, "renameOutput": true, "outputKey": "pedir motivo" },
+            { "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "conditions": [{ "id": "k3", "leftValue": "={{ $json.valid && $json.kind === 'reject-reason' }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }], "combinator": "and" }, "renameOutput": true, "outputKey": "rechazar con motivo" }
+          ]
+        },
+        "options": { "fallbackOutput": "extra", "renameFallbackOutput": "ignorar" }
+      },
+      "id": "b0000000-0000-4000-8000-000000000003",
+      "name": "por-accion",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [480, 300]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/admin/restaurants/{{ $json.restaurantId }}/approve",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Api-Key", "value": "={{ $env.FOODZINDER_API_KEY }}" }] },
+        "options": { "timeout": 30000, "response": { "response": { "neverError": true } } }
+      },
+      "id": "b0000000-0000-4000-8000-000000000011",
+      "name": "api-aprobar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 80],
+      "onError": "continueRegularOutput"
+    },
+    { "parameters": { "jsCode": "{{code:pedir-motivo}}" }, "id": "b0000000-0000-4000-8000-000000000021", "name": "pedir-motivo", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [760, 300] },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.askBody) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "b0000000-0000-4000-8000-000000000022",
+      "name": "telegram-pedir-motivo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/admin/restaurants/{{ $json.restaurantId }}/reject",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Api-Key", "value": "={{ $env.FOODZINDER_API_KEY }}" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ reason: $json.rejectReason }) }}",
+        "options": { "timeout": 30000, "response": { "response": { "neverError": true } } }
+      },
+      "id": "b0000000-0000-4000-8000-000000000031",
+      "name": "api-rechazar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 520],
+      "onError": "continueRegularOutput"
+    },
+
+    { "parameters": { "jsCode": "{{code:confirmar-accion}}" }, "id": "b0000000-0000-4000-8000-000000000041", "name": "confirmar-accion", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1000, 80] },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/{{ $json.editBody ? 'editMessageText' : 'sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.editBody || { chat_id: $json.chatId, text: $json.apiOk ? 'Hecho' : 'Ha fallado: ' + $json.apiError, parse_mode: 'HTML' }) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "b0000000-0000-4000-8000-000000000042",
+      "name": "telegram-confirmar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1240, 80],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('confirmar-accion').first().json.answerBody || $('pedir-motivo').first().json.answerBody || {}) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "b0000000-0000-4000-8000-000000000043",
+      "name": "telegram-answer-callback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 80],
+      "onError": "continueRegularOutput"
+    },
+    { "parameters": {}, "id": "b0000000-0000-4000-8000-000000000099", "name": "ignorar", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [760, 720] }
+  ],
+  "connections": {
+    "Webhook Telegram": { "main": [[{ "node": "parsear-callback", "type": "main", "index": 0 }]] },
+    "parsear-callback": { "main": [[{ "node": "por-accion", "type": "main", "index": 0 }]] },
+    "por-accion": {
+      "main": [
+        [{ "node": "api-aprobar", "type": "main", "index": 0 }],
+        [{ "node": "pedir-motivo", "type": "main", "index": 0 }],
+        [{ "node": "api-rechazar", "type": "main", "index": 0 }],
+        [{ "node": "ignorar", "type": "main", "index": 0 }]
+      ]
+    },
+    "api-aprobar": { "main": [[{ "node": "confirmar-accion", "type": "main", "index": 0 }]] },
+    "api-rechazar": { "main": [[{ "node": "confirmar-accion", "type": "main", "index": 0 }]] },
+    "confirmar-accion": { "main": [[{ "node": "telegram-confirmar", "type": "main", "index": 0 }]] },
+    "telegram-confirmar": { "main": [[{ "node": "telegram-answer-callback", "type": "main", "index": 0 }]] },
+    "pedir-motivo": { "main": [[{ "node": "telegram-pedir-motivo", "type": "main", "index": 0 }]] },
+    "telegram-pedir-motivo": { "main": [[{ "node": "telegram-answer-callback", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true, "timezone": "Europe/Madrid" },
+  "active": false,
+  "tags": [{ "name": "foodzinder" }]
+}

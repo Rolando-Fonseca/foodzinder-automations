@@ -17,7 +17,7 @@
       "typeVersion": 2,
       "position": [
         0,
-        300
+        400
       ],
       "webhookId": "foodzinder-entrada"
     },
@@ -30,8 +30,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        260,
-        300
+        240,
+        400
       ]
     },
     {
@@ -43,8 +43,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        520,
-        300
+        480,
+        400
       ]
     },
     {
@@ -178,52 +178,106 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        780,
-        300
+        720,
+        400
       ]
     },
     {
-      "parameters": {},
-      "id": "a0000000-0000-4000-8000-000000000011",
-      "name": "→ 01 aprobación asistida",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
+      "parameters": {
+        "jsCode": "// Flujo 01, nodo \"preparar-resumen\": del evento restaurant.created/resubmitted\n// construye el prompt y el cuerpo de la petición a Gemini.\n// Compartido: petición y respuesta de Gemini (generateContent), sin dependencias.\n// Se inyecta en los nodos con `// @include shared/gemini`.\n// @exports buildGeminiRequest, parseGeminiText, parseGeminiJson\n\nfunction buildGeminiRequest(prompt, opts) {\n  const o = opts || {};\n  const generationConfig = {\n    temperature: o.temperature == null ? 0.3 : o.temperature,\n    maxOutputTokens: o.maxOutputTokens || 400,\n  };\n  if (o.json) generationConfig.responseMimeType = \"application/json\";\n  return {\n    contents: [{ role: \"user\", parts: [{ text: prompt }] }],\n    generationConfig,\n    safetySettings: [],\n  };\n}\n\n/** Texto de la primera candidata, o null si la respuesta no tiene la forma esperada (error, bloqueo, timeout). */\nfunction parseGeminiText(response) {\n  try {\n    const parts = response && response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts;\n    if (!parts || !parts.length) return null;\n    const text = parts.map((p) => p.text || \"\").join(\"\").trim();\n    return text || null;\n  } catch (e) {\n    return null;\n  }\n}\n\n/** Intenta parsear la respuesta como JSON (quitando vallas ```json si las hay). null si no es JSON válido. */\nfunction parseGeminiJson(response) {\n  const text = parseGeminiText(response);\n  if (!text) return null;\n  const cleaned = text.replace(/^```(?:json)?\\s*/i, \"\").replace(/\\s*```$/, \"\").trim();\n  try {\n    return JSON.parse(cleaned);\n  } catch (e) {\n    return null;\n  }\n}\n// Compartido: prompts para Gemini. Misma estructura en todos: rol y tarea,\n// datos delimitados con la orden de no inventar, formato cerrado.\n// @exports promptResumenRestaurante, promptConsejosDueno, promptRespuestaResena, promptInformeSemanal\n\nconst REGLAS = \"Responde en español de España, sin saludos ni despedidas. Usa solo los datos proporcionados; si un dato falta, dilo, no lo inventes.\";\n\nfunction promptResumenRestaurante(r) {\n  const cocinas = (r.cuisines || []).map((c) => c.name || c).join(\", \") || \"sin indicar\";\n  return [\n    \"Eres el asistente del administrador de Foodzinder, un directorio de restaurantes. Un dueño acaba de dar de alta un restaurante y el administrador debe decidir si aprobarlo.\",\n    REGLAS,\n    \"DATOS DEL RESTAURANTE:\",\n    `- Nombre: ${r.name || \"sin indicar\"}`,\n    `- Ciudad: ${r.city || \"sin indicar\"}`,\n    `- Cocina: ${cocinas}`,\n    `- Rango de precio: ${r.priceRange || \"sin indicar\"}`,\n    `- Teléfono: ${r.phone || \"sin indicar\"}`,\n    `- Web: ${r.website || \"sin indicar\"}`,\n    `- Descripción: ${r.description ? `\"${r.description}\"` : \"sin descripción\"}`,\n    `- Dueño: ${(r.owner && (r.owner.name || r.owner.email)) || \"sin indicar\"}`,\n    \"TAREA: escribe (1) un resumen de dos frases de qué restaurante es, y (2) una lista de los datos que faltan o parecen incompletos para publicarlo (máximo cuatro puntos, cada uno de una línea). Si no falta nada relevante, escribe 'Nada relevante que corregir'.\",\n    \"FORMATO: primero el resumen, luego una línea en blanco, luego la lista con guiones. Máximo 90 palabras en total.\",\n  ].join(\"\\n\");\n}\n\nfunction promptConsejosDueno(r) {\n  const platos = [];\n  for (const m of r.menus || []) for (const c of m.categories || []) for (const d of c.dishes || []) platos.push(`${d.name} (${(d.allergens || []).map((a) => a.name).join(\", \") || \"sin alérgenos declarados\"})`);\n  return [\n    \"Eres el asistente de Foodzinder y escribes al dueño de un restaurante que acaba de ser publicado en el directorio.\",\n    REGLAS,\n    \"DATOS:\",\n    `- Restaurante: ${r.name}, ${r.city || \"ciudad sin indicar\"}`,\n    `- Descripción: ${r.description ? `\"${r.description}\"` : \"sin descripción\"}`,\n    `- Foto de portada: ${r.coverUrl ? \"sí\" : \"no\"}`,\n    `- Cartas: ${(r.menus || []).length}`,\n    `- Platos (con alérgenos declarados): ${platos.length ? platos.slice(0, 40).join(\"; \") : \"ninguno\"}`,\n    \"TAREA: escribe tres consejos concretos y accionables para que la ficha atraiga más clientes, basados solo en lo que falta o flojea en estos datos (por ejemplo: platos sin alérgenos declarados, sin descripción, sin foto, carta vacía, pocas categorías). Si todo está completo, felicita y sugiere pedir reseñas a los primeros clientes.\",\n    \"FORMATO: tres puntos con guion, cada uno de una o dos frases, en tono cercano y directo. Máximo 120 palabras.\",\n  ].join(\"\\n\");\n}\n\nfunction promptRespuestaResena(review) {\n  const r = review.ratings || {};\n  return [\n    \"Eres el asistente del dueño de un restaurante. Un cliente ha dejado una reseña negativa y el dueño quiere responder en público.\",\n    REGLAS,\n    \"RESEÑA:\",\n    `- Restaurante: ${review.restaurant && review.restaurant.name}`,\n    `- Autor: ${review.author && review.author.name}`,\n    `- Notas sobre 5: ambiente ${r.AMBIANCE}, servicio ${r.SERVICE}, comida ${r.FOOD}, calidad/precio ${r.VALUE} (media ${review.average})`,\n    `- Comentario: ${review.comment ? `\"${review.comment}\"` : \"sin comentario\"}`,\n    \"TAREA: (1) clasifica la queja principal en una de estas categorías: higiene, alergenos, trato, espera, comida, precio, otro. (2) Redacta un borrador de respuesta pública del dueño: agradece, reconoce lo concreto que se menciona sin excusas largas, no prometas lo que no se puede cumplir, invita a volver. Sin nombres de empleados. Entre 50 y 90 palabras.\",\n    'FORMATO: JSON con exactamente estas claves: {\"categoria\": \"...\", \"borrador\": \"...\"}. Sin texto fuera del JSON.',\n  ].join(\"\\n\");\n}\n\nfunction promptInformeSemanal(stats, reviews, pending) {\n  const top = (reviews || []).slice().sort((a, b) => b.average - a.average);\n  const line = (rv) => `${rv.restaurant && rv.restaurant.name}: ${rv.average}/5${rv.comment ? ` \"${String(rv.comment).slice(0, 120)}\"` : \"\"}`;\n  const s = stats || {};\n  return [\n    \"Eres el asistente del administrador de Foodzinder y redactas el informe semanal.\",\n    REGLAS,\n    \"CIFRAS DE LA SEMANA:\",\n    `- Usuarios: ${s.users && s.users.total} en total, ${s.users && s.users.new} nuevos, ${s.users && s.users.owners} dueños`,\n    `- Restaurantes: ${s.restaurants && s.restaurants.APPROVED} publicados, ${s.restaurants && s.restaurants.PENDING} pendientes, ${s.restaurants && s.restaurants.REJECTED} rechazados, ${s.restaurants && s.restaurants.new} nuevos esta semana`,\n    `- Reseñas: ${s.reviews && s.reviews.new} nuevas (${s.reviews && s.reviews.total} en total), nota media de la semana ${s.reviews && s.reviews.averageScore}`,\n    `- Webhooks: ${s.webhooks && s.webhooks.delivered} entregados, ${s.webhooks && s.webhooks.failed} fallidos`,\n    `- Pendientes de aprobación: ${(pending || []).map((p) => p.name).join(\", \") || \"ninguno\"}`,\n    `MEJORES RESEÑAS: ${top.slice(0, 3).map(line).join(\" | \") || \"ninguna\"}`,\n    `PEORES RESEÑAS: ${top.slice(-3).reverse().map(line).join(\" | \") || \"ninguna\"}`,\n    \"TAREA: escribe tres párrafos cortos (qué ha pasado, qué destaca para bien y para mal, qué conviene revisar) y termina con una lista 'Esta semana toca:' de dos a cuatro acciones concretas para el administrador.\",\n    \"FORMATO: texto plano, sin Markdown, máximo 220 palabras.\",\n  ].join(\"\\n\");\n}\nfunction run(item) {\n  const e = item.json;\n  const r = e.data || {};\n  const prompt = promptResumenRestaurante(r);\n  return [{ json: { ...e, prompt, geminiBody: buildGeminiRequest(prompt, { temperature: 0.2, maxOutputTokens: 300 }) } }];\n}\n\nreturn run($input.first()); // @n8n-invoke\n"
+      },
+      "id": "a0000000-0000-4000-8000-000000000101",
+      "name": "preparar-resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        1080,
-        60
+        1000,
+        120
       ]
     },
     {
-      "parameters": {},
-      "id": "a0000000-0000-4000-8000-000000000012",
-      "name": "→ 01 aprobación (reenvío)",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-2.5-flash' }}:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GOOGLE_AI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.geminiBody) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "a0000000-0000-4000-8000-000000000102",
+      "name": "gemini-resumen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        1080,
-        180
+        1240,
+        120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flujo 01, nodo \"mensaje-admin\": con la respuesta de Gemini (o sin ella) y el\n// evento original, construye el mensaje de Telegram con botones Aprobar/Rechazar.\n// Compartido: petición y respuesta de Gemini (generateContent), sin dependencias.\n// Se inyecta en los nodos con `// @include shared/gemini`.\n// @exports buildGeminiRequest, parseGeminiText, parseGeminiJson\n\nfunction buildGeminiRequest(prompt, opts) {\n  const o = opts || {};\n  const generationConfig = {\n    temperature: o.temperature == null ? 0.3 : o.temperature,\n    maxOutputTokens: o.maxOutputTokens || 400,\n  };\n  if (o.json) generationConfig.responseMimeType = \"application/json\";\n  return {\n    contents: [{ role: \"user\", parts: [{ text: prompt }] }],\n    generationConfig,\n    safetySettings: [],\n  };\n}\n\n/** Texto de la primera candidata, o null si la respuesta no tiene la forma esperada (error, bloqueo, timeout). */\nfunction parseGeminiText(response) {\n  try {\n    const parts = response && response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts;\n    if (!parts || !parts.length) return null;\n    const text = parts.map((p) => p.text || \"\").join(\"\").trim();\n    return text || null;\n  } catch (e) {\n    return null;\n  }\n}\n\n/** Intenta parsear la respuesta como JSON (quitando vallas ```json si las hay). null si no es JSON válido. */\nfunction parseGeminiJson(response) {\n  const text = parseGeminiText(response);\n  if (!text) return null;\n  const cleaned = text.replace(/^```(?:json)?\\s*/i, \"\").replace(/\\s*```$/, \"\").trim();\n  try {\n    return JSON.parse(cleaned);\n  } catch (e) {\n    return null;\n  }\n}\n// Compartido: cuerpos para la Bot API de Telegram (parse_mode HTML).\n// @exports escapeHtml, tgMessage, tgEditMessage, splitTelegram\n\nfunction escapeHtml(s) {\n  return String(s == null ? \"\" : s).replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n}\n\n/** Cuerpo de sendMessage. buttons: [[{text, data}]] → teclado inline. */\nfunction tgMessage(chatId, html, buttons) {\n  const body = { chat_id: chatId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true };\n  if (buttons && buttons.length) {\n    body.reply_markup = { inline_keyboard: buttons.map((row) => row.map((b) => ({ text: b.text, callback_data: b.data }))) };\n  }\n  return body;\n}\n\n/** Cuerpo de editMessageText (quita los botones al confirmar una acción). */\nfunction tgEditMessage(chatId, messageId, html) {\n  return { chat_id: chatId, message_id: messageId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true, reply_markup: { inline_keyboard: [] } };\n}\n\n/** Telegram limita a 4096 caracteres: parte por párrafos. */\nfunction splitTelegram(text, max) {\n  const limit = max || 4000;\n  if (text.length <= limit) return [text];\n  const chunks = [];\n  let current = \"\";\n  for (const para of text.split(/\\n\\n+/)) {\n    if ((current + \"\\n\\n\" + para).length > limit && current) {\n      chunks.push(current);\n      current = para;\n    } else current = current ? current + \"\\n\\n\" + para : para;\n  }\n  if (current) chunks.push(current);\n  return chunks.flatMap((c) => (c.length <= limit ? [c] : c.match(new RegExp(`[\\\\s\\\\S]{1,${limit}}`, \"g\"))));\n}\nfunction run(geminiItem, eventItem, env) {\n  const e = eventItem.json;\n  const r = e.data || {};\n  const resumen = parseGeminiText(geminiItem && geminiItem.json);\n  const base = (env.FOODZINDER_BASE_URL || \"https://foodzinder.vercel.app\").replace(/\\/+$/, \"\");\n  const reenvio = e.event === \"restaurant.resubmitted\";\n  const cocinas = (r.cuisines || []).map((c) => c.name || c).join(\", \");\n\n  const lines = [\n    `<b>${reenvio ? \"Restaurante reenviado tras rechazo\" : \"Nuevo restaurante pendiente\"}</b>`,\n    `<b>${escapeHtml(r.name)}</b>${r.city ? ` · ${escapeHtml(r.city)}` : \"\"}${cocinas ? ` · ${escapeHtml(cocinas)}` : \"\"}`,\n    `Dueño: ${escapeHtml((r.owner && (r.owner.name || r.owner.email)) || \"sin indicar\")}${r.owner && r.owner.email ? ` (${escapeHtml(r.owner.email)})` : \"\"}`,\n    \"\",\n    resumen ? escapeHtml(resumen) : `Sin resumen de IA. Precio: ${escapeHtml(r.priceRange || \"sin indicar\")}. ${r.description ? escapeHtml(String(r.description).slice(0, 300)) : \"Sin descripción.\"}`,\n    \"\",\n    `<a href=\"${base}/dashboard/admin/restaurants/${r.id}\">Ver ficha en el panel</a>`,\n  ];\n  const text = lines.join(\"\\n\");\n  const buttons = [[{ text: \"✅ Aprobar\", data: `approve:${r.id}` }, { text: \"❌ Rechazar\", data: `reject:${r.id}` }]];\n  return [{ json: { ...e, action: \"telegram-admin\", aiUsed: Boolean(resumen), telegramBody: tgMessage(env.TELEGRAM_ADMIN_CHAT_ID, text, buttons) } }];\n}\n\nreturn run($input.first(), $(\"preparar-resumen\").first(), $env); // @n8n-invoke\n"
+      },
+      "id": "a0000000-0000-4000-8000-000000000103",
+      "name": "mensaje-admin",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.telegramBody) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "a0000000-0000-4000-8000-000000000104",
+      "name": "telegram-admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        120
       ]
     },
     {
       "parameters": {},
       "id": "a0000000-0000-4000-8000-000000000013",
-      "name": "→ 02 bienvenida",
+      "name": "→ 02 bienvenida (fase 3)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1080,
-        300
+        1000,
+        400
       ]
     },
     {
       "parameters": {},
       "id": "a0000000-0000-4000-8000-000000000014",
-      "name": "→ 03 reseña",
+      "name": "→ 03 reseña (fase 3)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1080,
-        420
+        1000,
+        520
       ]
     },
     {
@@ -235,8 +289,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1080,
-        540
+        1960,
+        400
       ]
     },
     {
@@ -246,8 +300,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1080,
-        660
+        1000,
+        760
       ]
     }
   ],
@@ -289,28 +343,28 @@
       "main": [
         [
           {
-            "node": "→ 01 aprobación asistida",
+            "node": "preparar-resumen",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "→ 01 aprobación (reenvío)",
+            "node": "preparar-resumen",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "→ 02 bienvenida",
+            "node": "→ 02 bienvenida (fase 3)",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "→ 03 reseña",
+            "node": "→ 03 reseña (fase 3)",
             "type": "main",
             "index": 0
           }
@@ -325,6 +379,50 @@
         [
           {
             "node": "otros eventos (sin acción)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "preparar-resumen": {
+      "main": [
+        [
+          {
+            "node": "gemini-resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gemini-resumen": {
+      "main": [
+        [
+          {
+            "node": "mensaje-admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mensaje-admin": {
+      "main": [
+        [
+          {
+            "node": "telegram-admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "telegram-admin": {
+      "main": [
+        [
+          {
+            "node": "registrar",
             "type": "main",
             "index": 0
           }

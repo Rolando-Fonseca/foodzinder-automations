@@ -13,6 +13,16 @@ const nodesDir = join(root, "src", "nodes");
 const check = process.argv.includes("--check");
 
 const MARK = /^\{\{code:([a-z0-9-]+)\}\}$/;
+const sharedDir = join(root, "src");
+
+/** `// @include shared/x` dentro de un nodo → contenido de src/shared/x.js. */
+function expandIncludes(src) {
+  return src.replace(/^\/\/ @include ([a-z0-9/_-]+)\s*$/gm, (_, name) => {
+    const file = join(sharedDir, `${name}.js`);
+    if (!existsSync(file)) throw new Error(`No existe src/${name}.js (incluido desde un nodo)`);
+    return readFileSync(file, "utf8").replace(/\r\n/g, "\n").trimEnd();
+  });
+}
 
 function inject(obj, used) {
   if (Array.isArray(obj)) return obj.map((v) => inject(v, used));
@@ -22,7 +32,7 @@ function inject(obj, used) {
         const name = v.match(MARK)[1];
         const file = join(nodesDir, `${name}.js`);
         if (!existsSync(file)) throw new Error(`No existe src/nodes/${name}.js (usado en un nodo Code)`);
-        obj[k] = readFileSync(file, "utf8").replace(/\r\n/g, "\n").trimEnd() + "\n";
+        obj[k] = expandIncludes(readFileSync(file, "utf8").replace(/\r\n/g, "\n")).trimEnd() + "\n";
         used.add(name);
       } else obj[k] = inject(v, used);
     }

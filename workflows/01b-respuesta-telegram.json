@@ -1,0 +1,427 @@
+{
+  "name": "01b · Respuesta Telegram (aprobar / rechazar)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "b0000000-0000-4000-8000-000000000001",
+      "name": "Webhook Telegram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "foodzinder-telegram"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flujo 01b, nodo \"parsear-callback\": de la actualización de Telegram (webhook\n// del bot) saca acción e id, y comprueba que quien pulsa es el administrador.\n// Rechazar con motivo: el admin responde al mensaje del bot con el texto; ese\n// mensaje llega como `message` con reply_to_message.\nfunction run(item, env) {\n  const u = item.json.body || item.json;\n  const admin = String(env.TELEGRAM_ADMIN_CHAT_ID || \"\");\n\n  if (u.callback_query) {\n    const cq = u.callback_query;\n    const chatId = String(cq.message && cq.message.chat && cq.message.chat.id);\n    const m = /^(approve|reject):([0-9a-f-]{36})$/.exec(cq.data || \"\");\n    return [{\n      json: {\n        kind: \"callback\",\n        valid: chatId === admin && Boolean(m),\n        reason: chatId !== admin ? \"chat no autorizado\" : !m ? \"callback_data desconocido\" : null,\n        action: m ? m[1] : null,\n        restaurantId: m ? m[2] : null,\n        chatId,\n        messageId: cq.message && cq.message.message_id,\n        callbackQueryId: cq.id,\n        from: cq.from && (cq.from.first_name || cq.from.username),\n        originalText: cq.message && cq.message.text,\n      },\n    }];\n  }\n\n  if (u.message && u.message.reply_to_message) {\n    const msg = u.message;\n    const chatId = String(msg.chat && msg.chat.id);\n    const replied = msg.reply_to_message.text || \"\";\n    const m = /Motivo de rechazo para ([0-9a-f-]{36})/.exec(replied);\n    const reason = String(msg.text || \"\").trim();\n    return [{\n      json: {\n        kind: \"reject-reason\",\n        valid: chatId === admin && Boolean(m) && reason.length >= 10,\n        reason: chatId !== admin ? \"chat no autorizado\" : !m ? \"respuesta a un mensaje que no pide motivo\" : reason.length < 10 ? \"motivo demasiado corto (mínimo 10 caracteres)\" : null,\n        action: \"reject\",\n        restaurantId: m ? m[1] : null,\n        rejectReason: reason,\n        chatId,\n        messageId: msg.message_id,\n        from: msg.from && (msg.from.first_name || msg.from.username),\n      },\n    }];\n  }\n\n  return [{ json: { kind: \"ignored\", valid: false, reason: \"actualización sin callback ni respuesta\", chatId: null } }];\n}\n\nreturn run($input.first(), $env); // @n8n-invoke\n"
+      },
+      "id": "b0000000-0000-4000-8000-000000000002",
+      "name": "parsear-callback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "k1",
+                    "leftValue": "={{ $json.valid && $json.kind === 'callback' && $json.action === 'approve' }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "aprobar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "k2",
+                    "leftValue": "={{ $json.valid && $json.kind === 'callback' && $json.action === 'reject' }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pedir motivo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "k3",
+                    "leftValue": "={{ $json.valid && $json.kind === 'reject-reason' }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rechazar con motivo"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "ignorar"
+        }
+      },
+      "id": "b0000000-0000-4000-8000-000000000003",
+      "name": "por-accion",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/admin/restaurants/{{ $json.restaurantId }}/approve",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{ $env.FOODZINDER_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "b0000000-0000-4000-8000-000000000011",
+      "name": "api-aprobar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        80
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flujo 01b, nodo \"pedir-motivo\": el admin ha pulsado Rechazar; se le pide el\n// motivo respondiendo a un mensaje que lleva el id (así la respuesta se puede\n// asociar sin estado).\n// Compartido: cuerpos para la Bot API de Telegram (parse_mode HTML).\n// @exports escapeHtml, tgMessage, tgEditMessage, splitTelegram\n\nfunction escapeHtml(s) {\n  return String(s == null ? \"\" : s).replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n}\n\n/** Cuerpo de sendMessage. buttons: [[{text, data}]] → teclado inline. */\nfunction tgMessage(chatId, html, buttons) {\n  const body = { chat_id: chatId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true };\n  if (buttons && buttons.length) {\n    body.reply_markup = { inline_keyboard: buttons.map((row) => row.map((b) => ({ text: b.text, callback_data: b.data }))) };\n  }\n  return body;\n}\n\n/** Cuerpo de editMessageText (quita los botones al confirmar una acción). */\nfunction tgEditMessage(chatId, messageId, html) {\n  return { chat_id: chatId, message_id: messageId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true, reply_markup: { inline_keyboard: [] } };\n}\n\n/** Telegram limita a 4096 caracteres: parte por párrafos. */\nfunction splitTelegram(text, max) {\n  const limit = max || 4000;\n  if (text.length <= limit) return [text];\n  const chunks = [];\n  let current = \"\";\n  for (const para of text.split(/\\n\\n+/)) {\n    if ((current + \"\\n\\n\" + para).length > limit && current) {\n      chunks.push(current);\n      current = para;\n    } else current = current ? current + \"\\n\\n\" + para : para;\n  }\n  if (current) chunks.push(current);\n  return chunks.flatMap((c) => (c.length <= limit ? [c] : c.match(new RegExp(`[\\\\s\\\\S]{1,${limit}}`, \"g\"))));\n}\nfunction run(cbItem) {\n  const cb = cbItem.json;\n  const text = `Motivo de rechazo para ${cb.restaurantId}\\n\\nResponde a este mensaje con el motivo (mínimo 10 caracteres). El dueño lo recibirá tal cual.`;\n  return [{\n    json: {\n      ...cb,\n      askBody: { chat_id: cb.chatId, text, reply_markup: { force_reply: true, selective: true } },\n      answerBody: cb.callbackQueryId ? { callback_query_id: cb.callbackQueryId, text: \"Escribe el motivo\" } : null,\n    },\n  }];\n}\n\nreturn run($input.first()); // @n8n-invoke\n"
+      },
+      "id": "b0000000-0000-4000-8000-000000000021",
+      "name": "pedir-motivo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.askBody) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b0000000-0000-4000-8000-000000000022",
+      "name": "telegram-pedir-motivo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FOODZINDER_BASE_URL }}/api/v1/admin/restaurants/{{ $json.restaurantId }}/reject",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{ $env.FOODZINDER_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ reason: $json.rejectReason }) }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "b0000000-0000-4000-8000-000000000031",
+      "name": "api-rechazar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        520
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flujo 01b, nodo \"confirmar-accion\": tras llamar a la API de Foodzinder\n// (o fallar), prepara la edición del mensaje original y la respuesta al botón.\n// Compartido: cuerpos para la Bot API de Telegram (parse_mode HTML).\n// @exports escapeHtml, tgMessage, tgEditMessage, splitTelegram\n\nfunction escapeHtml(s) {\n  return String(s == null ? \"\" : s).replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n}\n\n/** Cuerpo de sendMessage. buttons: [[{text, data}]] → teclado inline. */\nfunction tgMessage(chatId, html, buttons) {\n  const body = { chat_id: chatId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true };\n  if (buttons && buttons.length) {\n    body.reply_markup = { inline_keyboard: buttons.map((row) => row.map((b) => ({ text: b.text, callback_data: b.data }))) };\n  }\n  return body;\n}\n\n/** Cuerpo de editMessageText (quita los botones al confirmar una acción). */\nfunction tgEditMessage(chatId, messageId, html) {\n  return { chat_id: chatId, message_id: messageId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true, reply_markup: { inline_keyboard: [] } };\n}\n\n/** Telegram limita a 4096 caracteres: parte por párrafos. */\nfunction splitTelegram(text, max) {\n  const limit = max || 4000;\n  if (text.length <= limit) return [text];\n  const chunks = [];\n  let current = \"\";\n  for (const para of text.split(/\\n\\n+/)) {\n    if ((current + \"\\n\\n\" + para).length > limit && current) {\n      chunks.push(current);\n      current = para;\n    } else current = current ? current + \"\\n\\n\" + para : para;\n  }\n  if (current) chunks.push(current);\n  return chunks.flatMap((c) => (c.length <= limit ? [c] : c.match(new RegExp(`[\\\\s\\\\S]{1,${limit}}`, \"g\"))));\n}\nfunction run(apiItem, cbItem, now) {\n  const cb = cbItem.json;\n  const api = (apiItem && apiItem.json) || {};\n  const ok = api.success === true;\n  const when = (now || new Date()).toLocaleString(\"es-ES\", { timeZone: \"Europe/Madrid\", hour: \"2-digit\", minute: \"2-digit\", day: \"2-digit\", month: \"2-digit\" });\n  const who = escapeHtml(cb.from || \"administrador\");\n  let status;\n  if (cb.action === \"approve\") status = ok ? `✅ <b>Aprobado</b> por ${who} a las ${when}. Ya está publicado.` : `⚠️ No se pudo aprobar: ${escapeHtml(api.error || \"error desconocido\")}`;\n  else status = ok ? `❌ <b>Rechazado</b> por ${who} a las ${when}. Motivo: ${escapeHtml(cb.rejectReason || \"\")}` : `⚠️ No se pudo rechazar: ${escapeHtml(api.error || \"error desconocido\")}`;\n\n  const original = cb.originalText ? escapeHtml(cb.originalText).split(\"\\n\").slice(0, 3).join(\"\\n\") : \"\";\n  const edit = cb.messageId ? tgEditMessage(cb.chatId, cb.messageId, `${original}\\n\\n${status}`.trim()) : null;\n  const answer = cb.callbackQueryId ? { callback_query_id: cb.callbackQueryId, text: ok ? \"Hecho\" : \"Ha fallado, mira el mensaje\" } : null;\n  return [{ json: { ...cb, apiOk: ok, apiError: ok ? null : api.error || null, editBody: edit, answerBody: answer, result: ok ? \"ok\" : \"fallo\" } }];\n}\n\nreturn run($input.first(), $(\"parsear-callback\").first(), new Date()); // @n8n-invoke\n"
+      },
+      "id": "b0000000-0000-4000-8000-000000000041",
+      "name": "confirmar-accion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/{{ $json.editBody ? 'editMessageText' : 'sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.editBody || { chat_id: $json.chatId, text: $json.apiOk ? 'Hecho' : 'Ha fallado: ' + $json.apiError, parse_mode: 'HTML' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b0000000-0000-4000-8000-000000000042",
+      "name": "telegram-confirmar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        80
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/answerCallbackQuery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('confirmar-accion').first().json.answerBody || $('pedir-motivo').first().json.answerBody || {}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b0000000-0000-4000-8000-000000000043",
+      "name": "telegram-answer-callback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1480,
+        80
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "b0000000-0000-4000-8000-000000000099",
+      "name": "ignorar",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        760,
+        720
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Telegram": {
+      "main": [
+        [
+          {
+            "node": "parsear-callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parsear-callback": {
+      "main": [
+        [
+          {
+            "node": "por-accion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "por-accion": {
+      "main": [
+        [
+          {
+            "node": "api-aprobar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "pedir-motivo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "api-rechazar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ignorar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "api-aprobar": {
+      "main": [
+        [
+          {
+            "node": "confirmar-accion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "api-rechazar": {
+      "main": [
+        [
+          {
+            "node": "confirmar-accion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "confirmar-accion": {
+      "main": [
+        [
+          {
+            "node": "telegram-confirmar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "telegram-confirmar": {
+      "main": [
+        [
+          {
+            "node": "telegram-answer-callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pedir-motivo": {
+      "main": [
+        [
+          {
+            "node": "telegram-pedir-motivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "telegram-pedir-motivo": {
+      "main": [
+        [
+          {
+            "node": "telegram-answer-callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "timezone": "Europe/Madrid"
+  },
+  "active": false,
+  "tags": [
+    {
+      "name": "foodzinder"
+    }
+  ]
+}

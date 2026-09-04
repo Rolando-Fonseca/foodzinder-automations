@@ -10,7 +10,7 @@ Cada flujo se describe con disparador, pasos, qué hace la IA, qué recibe la pe
 | 2 | Code `verificar-firma` | HMAC-SHA256 del cuerpo crudo con `FOODZINDER_WEBHOOK_SECRET`; compara en tiempo constante con `X-Foodzinder-Signature`; si falla, `throw` |
 | 3 | Code `normalizar-evento` | Devuelve `{ id, event, occurredAt, data }` y valida que `version === 1` |
 | 4 | Switch `por-evento` | Ramas: `restaurant.created`, `restaurant.resubmitted`, `restaurant.approved`, `review.created`, `webhook.test`, resto |
-| 5 | Execute Workflow | Llama al flujo correspondiente pasando el evento |
+| 5 | Ramas 01, 02 y 03 | Viven en este mismo workflow, cada una como una rama del Switch. Se descartó Execute Workflow porque exige ids de workflow que cambian en cada importación. Los flujos con disparador propio (01b, 04, 05) sí son workflows aparte |
 
 Prueba: `npm run event -- webhook.test` debe producir una ejecución verde; `npm run event -- webhook.test --bad-signature` debe producir una ejecución roja en el paso 2.
 
@@ -26,7 +26,9 @@ Prueba: `npm run event -- webhook.test` debe producir una ejecución verde; `npm
 | 4 | Code `mensaje-telegram` | Texto en Markdown con nombre, ciudad, dueño, resumen de IA (o los datos crudos si no hay IA) y enlace a `/dashboard/admin/restaurants/{id}` |
 | 5 | Telegram `avisar-admin` | Mensaje al `TELEGRAM_ADMIN_CHAT_ID` con botones inline `Aprobar` (`approve:{id}`) y `Rechazar` (`reject:{id}`) |
 
-**Respuesta a los botones:** `01b-respuesta-telegram`, con Telegram Trigger sobre `callback_query`.
+Telegram y Gemini se llaman con el nodo HTTP Request y variables de entorno, sin credenciales guardadas en n8n: así el mismo JSON funciona en local y en Render sin configurar nada en el editor.
+
+**Respuesta a los botones:** `01b-respuesta-telegram`, con un Webhook `POST /webhook/telegram` registrado en el bot con `scripts/telegram-set-webhook.mjs` (Telegram exige https: en local hace falta un túnel; en Render funciona directamente).
 
 | Paso | Nodo | Detalle |
 |------|------|---------|

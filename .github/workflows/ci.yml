@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Tests de los nodos
+        run: npm test
+      - name: Los JSON de workflows están al día con src/nodes
+        run: npm run check
+      - name: Los JSON son importables (forma mínima)
+        run: node scripts/validate-workflows.mjs
