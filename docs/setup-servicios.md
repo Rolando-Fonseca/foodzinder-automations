@@ -48,9 +48,17 @@ Comprobación rápida: `node scripts/telegram-set-webhook.mjs --chat-id` debe mo
 
 ## 3. Correo con Gmail (5 minutos)
 
-1. En la cuenta de Google, activar la verificación en dos pasos si no lo está.
-2. **Seguridad → Contraseñas de aplicaciones** → crear una para "n8n". Son 16 letras.
-3. `SMTP_USER` = tu Gmail; `SMTP_PASSWORD` = esa contraseña; `EMAIL_FROM` con tu Gmail entre `<>` para que Gmail no lo marque como falso.
+Una "contraseña de aplicación" es una clave de 16 letras que Google genera para que un programa (n8n) envíe correo con tu cuenta sin conocer tu contraseña real. No cambia tu contraseña. Google no la muestra en el menú de Seguridad: se llega por dirección directa y solo existe si la verificación en dos pasos está activada.
+
+1. Comprobar la verificación en dos pasos: abrir https://myaccount.google.com/signinoptions/twosv con tu Gmail. Si dice "Desactivada", pulsar **Activar la verificación en dos pasos** y seguir los pasos con el número de móvil (un código por SMS). Si ya está activada, seguir.
+2. Abrir directamente https://myaccount.google.com/apppasswords (puede pedir la contraseña de Google otra vez; eso es normal). Si la página dice que la opción no está disponible, es que el paso 1 no está completo o la cuenta la gestiona una empresa o centro; en ese caso usar una cuenta Gmail personal.
+3. En el cuadro **Nombre de la aplicación** escribir `n8n` y pulsar **Crear**.
+4. Aparece un recuadro amarillo con 16 letras en cuatro grupos (`abcd efgh ijkl mnop`). Copiarlas. Solo se muestran una vez; si se pierden, se crea otra.
+5. En el `.env` de este proyecto:
+   - `SMTP_USER=` tu dirección de Gmail completa.
+   - `SMTP_PASSWORD=` las 16 letras **sin espacios**.
+   - `EMAIL_FROM=Foodzinder <tu-gmail@gmail.com>` (Gmail obliga a que el remitente sea la propia cuenta; si no, lo reescribe o lo marca como falso).
+6. Comprobación: `node scripts/send-test-email.mjs tu-gmail@gmail.com` envía un correo de prueba y dice si el SMTP ha aceptado.
 
 ## 4. Gemini
 
