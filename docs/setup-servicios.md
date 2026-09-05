@@ -18,11 +18,33 @@ Crear el fichero copiando `.env.example` y editándolo con el editor de texto o 
 3. Copiar de Vercel (proyecto Foodzinder → Settings → Environment Variables) los valores de `FOODZINDER_API_KEY` y `WEBHOOK_SECRET` a `FOODZINDER_API_KEY` y `FOODZINDER_WEBHOOK_SECRET`.
 4. `npm run n8n:up` y abrir http://localhost:5678. La primera vez n8n pide crear el usuario propietario del editor.
 
-## 2. Bot de Telegram (3 minutos)
+## 2. Bot de Telegram (5 minutos)
 
-1. En Telegram, abrir **@BotFather** → `/newbot` → nombre `Foodzinder Ops` y usuario terminado en `bot`. Copiar el token a `TELEGRAM_BOT_TOKEN`.
-2. Abrir el chat con el bot recién creado y pulsar **Start** (si no, el bot no puede escribirte).
-3. Obtener tu chat id: abrir en el navegador `https://api.telegram.org/bot<TOKEN>/getUpdates` después de enviarle cualquier mensaje al bot; el número en `"chat":{"id":…}` va en `TELEGRAM_ADMIN_CHAT_ID`.
+BotFather es un chat dentro de Telegram, como un contacto más: le escribes órdenes y él crea bots. Hace falta tener Telegram instalado (móvil o escritorio) con una cuenta.
+
+**Crear el bot**
+
+1. Abrir Telegram y, en la lupa de buscar (arriba), escribir `BotFather`. Aparece un contacto con un tick azul de verificado llamado **BotFather**. Tocarlo para abrir el chat. Si hay varios resultados, el bueno es el verificado; los demás son imitaciones.
+2. Pulsar **Iniciar** (o escribir `/start`). Responde con una lista de comandos.
+3. Escribir `/newbot` y enviar.
+4. Pregunta el nombre visible del bot: escribir `Foodzinder Ops` y enviar.
+5. Pregunta el nombre de usuario: tiene que ser único y terminar en `bot`, sin espacios. Por ejemplo `foodzinder_rolando_bot`. Si dice que está cogido, probar otro.
+6. Responde "Done! Congratulations…" y, en medio del mensaje, una línea de texto como `123456789:AAH…` de unos 45 caracteres. Ese es el **token**. Tocarlo para copiarlo (en el móvil, mantener pulsado → copiar).
+7. Pegarlo en el `.env` de este proyecto en la línea `TELEGRAM_BOT_TOKEN=` (sin espacios ni comillas). No compartirlo: quien lo tenga controla el bot.
+
+**Abrir el chat con tu bot (imprescindible)**
+
+8. En el mismo mensaje de BotFather hay un enlace `t.me/<tu_bot>`. Tocarlo abre el chat con el bot nuevo. Pulsar **Iniciar** y escribir `hola`. Sin este paso, Telegram no permite que el bot te escriba.
+
+**Obtener tu chat id**
+
+9. En una terminal, dentro de la carpeta del proyecto:
+   ```bash
+   node scripts/telegram-set-webhook.mjs --chat-id
+   ```
+   Imprime una línea `TELEGRAM_ADMIN_CHAT_ID=123456789   # Tu nombre`. Copiar ese número al `.env` en `TELEGRAM_ADMIN_CHAT_ID=`.
+
+Comprobación rápida: `node scripts/telegram-set-webhook.mjs --chat-id` debe mostrar el nombre del bot y tu chat. Si dice que nadie ha escrito al bot, repetir el paso 8.
 
 ## 3. Correo con Gmail (5 minutos)
 
