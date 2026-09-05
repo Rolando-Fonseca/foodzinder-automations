@@ -34,7 +34,8 @@ t.sendMail({ from: process.env.EMAIL_FROM || process.env.SMTP_USER, to: process.
   .catch((e) => { console.error("Fallo SMTP:", e.message); process.exit(1); });
 `;
 try {
-  const out = execFileSync("docker", ["compose", "exec", "-T", "-e", `SMTP_HOST=${SMTP_HOST}`, "-e", `SMTP_PORT=${SMTP_PORT || 465}`, "-e", `SMTP_USER=${SMTP_USER}`, "-e", `SMTP_PASSWORD=${SMTP_PASSWORD}`, "-e", `EMAIL_FROM=${EMAIL_FROM || ""}`, "n8n", "node", "-e", script, to], {
+  // nodemailer vive dentro del paquete n8n (pnpm); Node lo resuelve si se ejecuta desde ese directorio.
+  const out = execFileSync("docker", ["compose", "exec", "-T", "-e", `SMTP_HOST=${SMTP_HOST}`, "-e", `SMTP_PORT=${SMTP_PORT || 465}`, "-e", `SMTP_USER=${SMTP_USER}`, "-e", `SMTP_PASSWORD=${SMTP_PASSWORD}`, "-e", `EMAIL_FROM=${EMAIL_FROM || ""}`, "-w", "/usr/local/lib/node_modules/n8n", "n8n", "node", "-e", script, to], {
     cwd: new URL("..", import.meta.url),
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],

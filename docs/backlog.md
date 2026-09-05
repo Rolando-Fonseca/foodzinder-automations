@@ -35,7 +35,7 @@ Verificación hecha (2026-09-05): `restaurant.created` con Gràcia Verde → Tel
 
 ## Fase 3: flujos 2 y 3 con IA
 
-- [ ] SMTP configurado (guía, apartado 3). Pendiente del usuario.
+- [x] SMTP de Gmail configurado con contraseña de aplicación; `scripts/send-test-email.mjs` comprueba el envío (Gmail respondió `250 OK`). Verificado el correo de bienvenida real enviado desde el nodo Code con nodemailer.
 - [x] Rama 02: ficha pública por API, consejos generados con Gemini a partir de la carta real, correo con URL pública y enlace al panel.
 - [x] Rama 03: solo media < 3, clasificación y borrador en JSON, correo al dueño, escalado a Telegram si es higiene o alérgenos.
 - [x] Correo desde un nodo Code con nodemailer y variables `SMTP_*`; si faltan, el flujo termina con "omitido: SMTP sin configurar" en vez de fallar.
