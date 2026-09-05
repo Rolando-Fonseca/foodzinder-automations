@@ -23,15 +23,15 @@ Verificación hecha: tres ejecuciones en n8n con el resultado esperado cada una.
 
 ## Fase 2: flujos 1 y 5
 
-- [ ] Bot de Telegram y chat del administrador (guía, apartado 2). Pendiente del usuario.
+- [x] Bot de Telegram `@foodzinder_rolando_bot` y chat del administrador. `scripts/telegram-set-webhook.mjs --chat-id` saca el chat id sin abrir URLs con el token.
 - [x] Rama 01 en el flujo de entrada: prompt de resumen, Gemini por HTTP con degradación, mensaje con botones Aprobar/Rechazar.
 - [x] `01b-respuesta-telegram`: webhook del bot, parseo del callback con comprobación de chat, aprobar y rechazar con motivo (respuesta al mensaje del bot) contra la API privada, edición del mensaje original y respuesta al botón.
 - [x] `05-demo-despierta`: ping cada 10 minutos entre 8:00 y 22:00, aviso limitado a uno por hora.
 - [x] 29 tests: Gemini (petición y parseo), Telegram (HTML, teclado, troceado), prompts, y todos los nodos de 01, 01b y 05.
 - [x] Verificado en local con `restaurant.created`: la rama llega hasta Telegram con el resumen de Gemini construido; falla ahí a falta de token.
-- [ ] Con el bot creado: registrar el webhook (`scripts/telegram-set-webhook.mjs`), pulsar Aprobar y ver el cambio en Foodzinder.
+- [x] Webhook del bot registrado hacia un túnel local; `send-event.mjs --pending` toma un restaurante realmente pendiente por la API privada.
 
-Verificación pendiente: alta de restaurante en Foodzinder → Telegram → Aprobar → ficha pública visible.
+Verificación hecha (2026-09-05): `restaurant.created` con Gràcia Verde → Telegram con resumen y botones → Aprobar en el móvil → n8n llama a la API → Gràcia Verde publicado en https://foodzinder.vercel.app/restaurant/gracia-verde y el mensaje editado con quién y cuándo. Ejecuciones 48 a 50 en verde.
 
 ## Fase 3: flujos 2 y 3 con IA
 

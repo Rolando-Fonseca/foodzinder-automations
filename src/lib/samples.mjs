@@ -11,7 +11,19 @@ const FALLBACK = {
   priceRange: "MODERATE",
 };
 
-async function pickRestaurant(baseUrl) {
+async function pickRestaurant(baseUrl, opts = {}) {
+  // --pending: un restaurante realmente pendiente en Foodzinder (API privada), para que Aprobar/Rechazar tengan efecto real.
+  if (opts.pending && process.env.FOODZINDER_API_KEY) {
+    try {
+      const res = await fetch(`${baseUrl}/api/v1/admin/restaurants?status=PENDING`, { headers: { "x-api-key": process.env.FOODZINDER_API_KEY }, signal: AbortSignal.timeout(8000) });
+      const json = await res.json();
+      const r = json.data?.[0];
+      if (r) return { id: r.id, slug: r.slug, name: r.name, city: r.city, status: "PENDING", priceRange: r.priceRange, description: r.description, phone: r.phone, website: r.website, cuisines: (r.taxonomies || []).map((t) => t.taxonomy?.name).filter(Boolean).map((name) => ({ name })), ownerEmail: r.owner?.email, ownerName: [r.owner?.firstName, r.owner?.lastName].filter(Boolean).join(" ") };
+      console.error("(no hay restaurantes pendientes en Foodzinder; se usa uno publicado)");
+    } catch (e) {
+      console.error(`(no se pudo consultar la API privada: ${e.message})`);
+    }
+  }
   try {
     const res = await fetch(`${baseUrl}/api/v1/restaurants?limit=1&sort=recent`, { signal: AbortSignal.timeout(5000) });
     const json = await res.json();
@@ -25,8 +37,8 @@ async function pickRestaurant(baseUrl) {
 export async function sampleEvent(event, opts = {}) {
   const baseUrl = opts.baseUrl || "https://foodzinder.vercel.app";
   const to = opts.to || "dueno@example.com";
-  const owner = { id: "user_seed_owner_1", email: to, name: "Lucía Terral" };
-  const r = await pickRestaurant(baseUrl);
+  const r = await pickRestaurant(baseUrl, { pending: opts.pending });
+  const owner = { id: "user_seed_owner_1", email: r.ownerEmail && !opts.to ? r.ownerEmail : to, name: r.ownerName || "Lucía Terral" };
 
   switch (event) {
     case "webhook.test":

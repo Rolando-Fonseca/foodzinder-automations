@@ -42,7 +42,7 @@ const envelope = {
   event,
   version: 1,
   occurredAt: new Date().toISOString(),
-  data: await sampleEvent(event, { average: flag("average") ? Number(flag("average")) : undefined, to: flag("to"), comment: flag("comment"), baseUrl: process.env.FOODZINDER_BASE_URL }),
+  data: await sampleEvent(event, { average: flag("average") ? Number(flag("average")) : undefined, to: flag("to"), comment: flag("comment"), pending: has("pending"), baseUrl: process.env.FOODZINDER_BASE_URL }),
 };
 const body = JSON.stringify(envelope);
 const signature = has("bad-signature") ? "sha256=" + "0".repeat(64) : signPayload(body, secret);

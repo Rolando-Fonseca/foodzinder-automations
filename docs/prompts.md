@@ -30,6 +30,14 @@ Con la IA funcionando, los tres textos generados se leyeron con ojos de usuario:
 
 **Lección:** la degradación hay que probarla con un fallo real, no solo con un test. Y el modelo, con la clave que se va a usar: los nombres de modelo caducan.
 
+## El bot de Telegram: cuando la guía no basta
+
+La guía decía "abre @BotFather". Para alguien que no ha creado un bot, eso no significa nada: no se sabe si es una web, una app o un contacto. El usuario dio vueltas, creó el bot dos veces sin saberlo y escribió "hola" al primero mientras el token que había pegado era del segundo. Telegram, consultado por la API, lo dijo claro: ese bot no había recibido ningún mensaje. Y el bot no contestaba al "hola", lo cual era correcto pero parecía un fallo.
+
+Tres cambios salieron de ahí: la guía explica qué es BotFather (un chat, con tick azul, con imitaciones al lado), da el enlace directo `t.me/<bot>` para no confundir bots homónimos, y el script obtiene el chat id solo, en vez de pedir abrir una URL con el token dentro. Y una frase en la guía que faltaba: "no responderá nada; es normal".
+
+**Lección:** la frustración del usuario que "sigue cada paso y no funciona" casi siempre señala un paso que la documentación daba por obvio. Se arregla en la guía y con una herramienta, no explicándolo otra vez en el chat.
+
 ## Prompts dentro del producto
 
 Los prompts que se envían a Gemini viven en `src/lib/prompts.mjs`, no en los nodos, y tienen tests. Cada uno sigue la misma estructura:
