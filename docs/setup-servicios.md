@@ -66,7 +66,7 @@ Una "contraseña de aplicación" es una clave de 16 letras que Google genera par
 
 ## 5. Render + Neon (Fase 5)
 
-1. En Neon, proyecto `foodzinder` → **Databases → New database** → nombre `n8n`. Copiar host, usuario y contraseña de la cadena de conexión **sin** pooling.
+1. En Neon, proyecto `foodzinder` → menú **Branches** → rama principal → pestaña **Databases** → **Add database** → nombre `n8n`, owner el propuesto → **Create**. Después, botón **Connect** (arriba a la derecha): elegir la base `n8n` en el desplegable, **desactivar** "Connection pooling" (el host no debe llevar `-pooler`) y copiar la cadena. Pegarla en el `.env` como `N8N_NEON_URL=postgresql://…`; `node scripts/neon-vars.mjs` la trocea en las cuatro variables `DB_POSTGRESDB_*` que pide Render y comprueba la conexión.
 2. En Render, **New → Blueprint**, conectar el repo `foodzinder-automations`; lee `render.yaml`. Rellenar las variables marcadas como `sync: false` con los valores del `.env` (los de Neon en `DB_POSTGRESDB_*`).
 3. Cuando arranque, abrir `https://foodzinder-n8n.onrender.com`, crear el usuario propietario e importar los JSON de `workflows/`.
 4. Activar los flujos. No hay que crear credenciales en n8n: Telegram, Gemini y el correo se llaman con las variables de entorno. Registrar el webhook del bot con `node scripts/telegram-set-webhook.mjs --url https://foodzinder-n8n.onrender.com/webhook/telegram`.
