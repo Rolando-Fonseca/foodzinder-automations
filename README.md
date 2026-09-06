@@ -4,6 +4,15 @@ Capa de automatización con **n8n e IA** sobre [Foodzinder](https://github.com/R
 
 > **n8n público:** https://foodzinder-n8n-6not.onrender.com · **Foodzinder (P4):** https://foodzinder.vercel.app · **Repo:** https://github.com/Rolando-Fonseca/foodzinder-automations · **Docs:** [arquitectura](docs/architecture.md) · [flujos](docs/flujos.md) · [ADRs](docs/adr/) · [ingeniería de contexto](docs/prompts.md) · [changelog](CHANGELOG.md)
 
+> El n8n público muestra una pantalla de acceso: el editor es privado, como cualquier panel de administración, y no hace falta entrar para comprobar que funciona. Sin sesión se puede verificar:
+>
+> ```bash
+> curl https://foodzinder-n8n-6not.onrender.com/healthz                    # {"status":"ok"}
+> curl -X POST https://foodzinder-n8n-6not.onrender.com/webhook/informe    # {"message":"Workflow was started"} y el informe llega al Telegram del administrador
+> ```
+>
+> Los flujos están en [`workflows/`](workflows/), el código de sus nodos en [`src/nodes/`](src/nodes/) y las ejecuciones y mensajes reales en [`docs/screenshots/`](docs/screenshots/). Si el servicio lleva más de 15 minutos sin uso fuera del horario de demo, la primera petición tarda unos 50 segundos en despertarlo.
+
 ## Qué automatiza
 
 Foodzinder emite eventos firmados (alta de restaurante, aprobación, rechazo, reseña, suscripción) y expone una API privada con clave. n8n los recibe y hace el trabajo que antes exigía a una persona mirar el panel:
