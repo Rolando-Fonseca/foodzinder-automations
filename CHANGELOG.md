@@ -2,6 +2,18 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/). Versionado semántico.
 
+## [1.1.0] - 2026-09-06
+
+Cierre del proyecto: los cinco flujos verificados en producción con un alta real y demo ensayada.
+
+### Añadido
+- Transporte de correo `foodzinder` (`EMAIL_TRANSPORT`): el plan gratuito de Render bloquea el SMTP saliente, así que n8n compone el correo y lo envía por `POST /api/v1/admin/email` de Foodzinder. En local sigue el SMTP directo.
+- Guion de demo cerrado con los resultados del ensayo contra el n8n público y las capturas en `docs/screenshots/`. `docs/prompts.md` cerrado con el balance del proyecto.
+
+### Corregido
+- El sandbox del nodo Code de n8n 1.95 no expone `fetch`; el relevo usa `this.helpers.httpRequest`.
+- El flujo 05 despertaba la URL antigua del servicio; ahora usa `RENDER_EXTERNAL_URL`.
+
 ## [1.0.0] - 2026-09-06
 
 Primera versión desplegada: https://foodzinder-n8n-6not.onrender.com, conectada a https://foodzinder.vercel.app.

@@ -71,4 +71,15 @@ Los prompts que se envían a Gemini viven en `src/lib/prompts.mjs`, no en los no
 3. Formato de salida cerrado (longitud, idioma, JSON cuando se va a parsear).
 4. Un ejemplo corto cuando el formato importa.
 
-*(Se amplía al cerrar cada fase.)*
+## Cierre: qué me llevo del P5
+
+Tres cosas que no sabía al empezar y que cambiarían cómo arranco el siguiente proyecto.
+
+**El contrato primero, y con tests que lo ejecuten.** Escribir `docs/api.md` antes de tocar n8n hizo que el P5 nunca discutiera con el P4: cuando algo fallaba, uno de los dos incumplía un documento que ambos podían leer. Los 18 tests de contrato del P4 y los 46 del P5 son ese documento convertido en algo que se ejecuta.
+
+**Los fallos de producción no son de código.** De los ocho tropiezos del despliegue (memoria, migraciones de otra versión, WAF, JWT que cambiaba, instancia dormida, SMTP bloqueado, `fetch` ausente en el sandbox, dos servicios duplicados), ninguno lo habría encontrado un test. Los encontró una prueba real con un restaurante real y una persona real apretando un botón en Telegram. Reservar tiempo para esa prueba, no para más tests, fue lo que terminó el proyecto.
+
+**Degradación antes que perfección.** Cada llamada a la IA y cada envío tienen una salida «omitido: motivo» en vez de un error. Eso permitió que el aviso de alta llegara con datos crudos cuando Gemini retiró el modelo, y que el flujo de bienvenida terminara en verde cuando faltaba el SMTP. Un sistema que explica por qué no hizo algo es más útil en una demo que uno que se cae.
+
+Lo que dejaría fuera si volviera a empezar: el segundo bot de Telegram, el servicio duplicado de Render y la hora perdida con la contraseña de aplicación de Google; todo eso está en `docs/setup-servicios.md` para que la próxima vez cueste diez minutos.
+

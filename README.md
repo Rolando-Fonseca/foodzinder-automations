@@ -57,7 +57,7 @@ docker compose exec -T n8n n8n update:workflow --id=<id> --active=true && docker
 | 5 | Despliegue en Render con Neon, Foodzinder apuntando al n8n público | Hecha: eventos de producción recibidos y aprobación desde Telegram probada |
 | 6 | Demo y presentación | Guion en [docs/demo.md](docs/demo.md) |
 
-Tests: 45 sobre el mismo código que corre en los nodos. CI: [GitHub Actions](https://github.com/Rolando-Fonseca/foodzinder-automations/actions).
+Tests: 46 sobre el mismo código que corre en los nodos. CI: [GitHub Actions](https://github.com/Rolando-Fonseca/foodzinder-automations/actions).
 
 Detalle en [docs/backlog.md](docs/backlog.md).
 

@@ -66,9 +66,9 @@ Verificación: trío de URLs; alta real en Foodzinder produce un Telegram en men
 
 ## Fase 6: demo y presentación
 
-- [ ] Guion de demo de 5 minutos.
-- [ ] `docs/prompts.md` cerrado.
-- [ ] Capturas de las ejecuciones y de los mensajes recibidos en `docs/screenshots/`.
+- [x] Guion de demo de 5 minutos, ensayado el 2026-09-06 contra el n8n público: ping, bot, firma falsa (ejecución 22, roja), bienvenida (20) e informe (21). Resultados y preguntas probables en `docs/demo.md`.
+- [x] `docs/prompts.md` cerrado con el balance del proyecto.
+- [x] Capturas en `docs/screenshots/` con índice: las automáticas (ficha pública, índice de la API, n8n) hechas; las del editor de n8n, Telegram y la bandeja las aporta el administrador desde su sesión y su móvil (marcadas como pendientes en el índice).
 
 ## Fuera de alcance
 
