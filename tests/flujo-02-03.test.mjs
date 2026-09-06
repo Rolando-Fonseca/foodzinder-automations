@@ -24,11 +24,11 @@ describe("rama 02: bienvenida", () => {
   it("preparar-consejos usa la ficha pública y cae al evento si la API falla", () => {
     const run = loadNode("preparar-consejos");
     const withFicha = run(ficha, approved)[0].json;
-    expect(withFicha.prompt).toContain("Cocido (sin alérgenos declarados)");
-    expect(withFicha.prompt).toContain("Croquetas (Gluten)");
+    expect(withFicha.instrucciones).toContain("Cocido (sin alérgenos declarados)");
+    expect(withFicha.instrucciones).toContain("Croquetas (Gluten)");
     const noFicha = run({ json: { error: "timeout" } }, approved)[0].json;
     expect(noFicha.ficha.menus).toEqual([]);
-    expect(noFicha.prompt).toContain("Casa Terral");
+    expect(noFicha.instrucciones).toContain("Casa Terral");
   });
 
   it("email-bienvenida lleva URL pública, consejos de IA como lista y destinatario", () => {

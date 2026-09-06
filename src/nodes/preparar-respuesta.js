@@ -8,8 +8,8 @@ function run(item) {
   const review = e.data || {};
   const avg = Number(review.average);
   if (!(avg < 3)) return [];
-  const prompt = promptRespuestaResena(review);
-  return [{ json: { ...e, prompt, geminiBody: buildGeminiRequest(prompt, { temperature: 0.5, maxOutputTokens: 500, json: true }) } }];
+  const instrucciones = promptRespuestaResena(review);
+  return [{ json: { ...e, instrucciones, geminiBody: buildGeminiBody(instrucciones, { temperature: 0.5, maxOutputTokens: 500, json: true }) } }];
 }
 
 return run($input.first()); // @n8n-invoke

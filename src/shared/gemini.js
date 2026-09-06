@@ -1,8 +1,8 @@
 // Compartido: petición y respuesta de Gemini (generateContent), sin dependencias.
 // Se inyecta en los nodos con `// @include shared/gemini`.
-// @exports buildGeminiRequest, parseGeminiText, parseGeminiJson
+// @exports buildGeminiBody, parseGeminiText, parseGeminiJson
 
-function buildGeminiRequest(prompt, opts) {
+function buildGeminiBody(instrucciones, opts) {
   const o = opts || {};
   const generationConfig = {
     temperature: o.temperature == null ? 0.3 : o.temperature,
@@ -13,7 +13,7 @@ function buildGeminiRequest(prompt, opts) {
   };
   if (o.json) generationConfig.responseMimeType = "application/json";
   return {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    contents: [{ role: "user", parts: [{ text: instrucciones }] }],
     generationConfig,
     safetySettings: [],
   };

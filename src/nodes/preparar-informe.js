@@ -1,5 +1,5 @@
 // Flujo 04, nodo "preparar-informe": junta estadísticas, reseñas de la semana
-// y pendientes (tres llamadas a la API privada) y construye el prompt.
+// y pendientes (tres llamadas a la API privada) y construye el instrucciones.
 // Si alguna llamada falló, sigue con lo que hay y lo dice en el informe.
 // @include shared/gemini
 // @include shared/prompts
@@ -10,7 +10,7 @@ function run(statsItem, reviewsItem, pendingItem) {
   const pending = pendingItem && pendingItem.json && pendingItem.json.success ? pendingItem.json.data || [] : [];
   const missing = [!stats && "estadísticas", !(reviewsItem && reviewsItem.json && reviewsItem.json.success) && "reseñas", !(pendingItem && pendingItem.json && pendingItem.json.success) && "pendientes"].filter(Boolean);
 
-  const prompt = promptInformeSemanal(stats || {}, reviews, pending);
+  const instrucciones = promptInformeSemanal(stats || {}, reviews, pending);
   return [{
     json: {
       event: "informe.semanal",
@@ -19,8 +19,8 @@ function run(statsItem, reviewsItem, pendingItem) {
       reviewsCount: reviews.length,
       pending: pending.map((p) => ({ id: p.id, name: p.name, city: p.city, owner: p.owner && p.owner.email })),
       missing,
-      prompt,
-      geminiBody: buildGeminiRequest(prompt, { temperature: 0.3, maxOutputTokens: 700 }),
+      instrucciones,
+      geminiBody: buildGeminiBody(instrucciones, { temperature: 0.3, maxOutputTokens: 700 }),
     },
   }];
 }

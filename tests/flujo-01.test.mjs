@@ -16,9 +16,9 @@ const event = { json: { id: "evt-1", event: "restaurant.created", occurredAt: "2
 const gemini = (text) => ({ json: { candidates: [{ content: { parts: [{ text }] } }] } });
 
 describe("shared/gemini", () => {
-  const { buildGeminiRequest, parseGeminiText, parseGeminiJson } = loadShared("gemini");
+  const { buildGeminiBody, parseGeminiText, parseGeminiJson } = loadShared("gemini");
   it("construye la petición con temperatura, tokens y JSON opcional", () => {
-    const b = buildGeminiRequest("hola", { temperature: 0.2, maxOutputTokens: 100, json: true });
+    const b = buildGeminiBody("hola", { temperature: 0.2, maxOutputTokens: 100, json: true });
     expect(b.contents[0].parts[0].text).toBe("hola");
     expect(b.generationConfig).toEqual({ temperature: 0.2, maxOutputTokens: 100, responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "minimal" } });
   });
@@ -50,7 +50,7 @@ describe("shared/telegram", () => {
 
 describe("shared/prompts", () => {
   const p = loadShared("prompts");
-  it("el prompt de resumen incluye los datos, la orden de no inventar y el formato", () => {
+  it("el instrucciones de resumen incluye los datos, la orden de no inventar y el formato", () => {
     const t = p.promptResumenRestaurante(restaurant);
     expect(t).toContain("Casa <Terral>");
     expect(t).toContain("Española");
@@ -58,7 +58,7 @@ describe("shared/prompts", () => {
     expect(t).toContain("Máximo 90 palabras");
     expect(t).toContain("Teléfono: sin indicar");
   });
-  it("el prompt de reseña pide JSON con las dos claves", () => {
+  it("el instrucciones de reseña pide JSON con las dos claves", () => {
     const t = p.promptRespuestaResena({ restaurant: { name: "X" }, author: { name: "Iker" }, ratings: { AMBIANCE: 2, SERVICE: 1, FOOD: 3, VALUE: 2 }, average: 2, comment: "frío" });
     expect(t).toContain('"categoria"');
     expect(t).toContain('"borrador"');
@@ -73,10 +73,10 @@ describe("shared/prompts", () => {
 });
 
 describe("nodo preparar-resumen", () => {
-  it("añade prompt y cuerpo de Gemini conservando el evento", () => {
+  it("añade instrucciones y cuerpo de Gemini conservando el evento", () => {
     const out = loadNode("preparar-resumen")(event);
     expect(out[0].json.id).toBe("evt-1");
-    expect(out[0].json.prompt).toContain("Casa <Terral>");
+    expect(out[0].json.instrucciones).toContain("Casa <Terral>");
     expect(out[0].json.geminiBody.generationConfig.temperature).toBe(0.2);
   });
 });

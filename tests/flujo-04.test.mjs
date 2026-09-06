@@ -9,13 +9,13 @@ const gemini = (text) => ({ json: { candidates: [{ content: { parts: [{ text }] 
 
 describe("nodo preparar-informe", () => {
   const run = loadNode("preparar-informe");
-  it("construye el prompt con cifras, reseñas y pendientes", () => {
+  it("construye el instrucciones con cifras, reseñas y pendientes", () => {
     const out = run(stats, reviews, pending)[0].json;
     expect(out.event).toBe("informe.semanal");
     expect(out.missing).toEqual([]);
     expect(out.pending[0]).toMatchObject({ name: "Gràcia Verde", owner: "pol@x.cat" });
-    expect(out.prompt).toContain("MEJORES RESEÑAS: Casa Terral: 4.5/5");
-    expect(out.prompt).toContain("Gràcia Verde");
+    expect(out.instrucciones).toContain("MEJORES RESEÑAS: Casa Terral: 4.5/5");
+    expect(out.instrucciones).toContain("Gràcia Verde");
     expect(out.geminiBody.generationConfig.maxOutputTokens).toBe(700);
   });
   it("sigue aunque falten llamadas y lo anota", () => {
