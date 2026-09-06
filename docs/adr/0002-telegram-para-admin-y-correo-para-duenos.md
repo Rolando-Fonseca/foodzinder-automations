@@ -25,3 +25,8 @@ Negativas:
 - Telegram exige que el administrador haya abierto el chat con el bot antes; se documenta en la guía.
 - Gmail limita a unos 500 correos al día y marca como spam si el remitente no coincide con la cuenta. Para la demo es irrelevante; para producción habría que usar un dominio verificado.
 - Las contraseñas de aplicación de Google requieren verificación en dos pasos activada en la cuenta.
+
+## Nota de implementación (2026-09-06)
+
+El plan gratuito de Render bloquea las conexiones SMTP salientes: el primer correo de bienvenida real terminó en `Connection timeout` contra Gmail, aunque el mismo nodo funciona en local. En vez de añadir un proveedor transaccional (otra cuenta más), el nodo `enviar-email` admite dos transportes con `EMAIL_TRANSPORT`: `smtp` en local y `foodzinder` en Render, que envía el correo ya compuesto por `POST /api/v1/admin/email` de Foodzinder (Vercel sí permite SMTP) con la clave de API. La decisión de qué correo enviar y su contenido sigue en n8n; Foodzinder solo lo transporta.
+

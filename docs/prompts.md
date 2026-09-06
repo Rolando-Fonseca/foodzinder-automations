@@ -58,6 +58,10 @@ Cada uno se localizó desde fuera con lo que había: la lista de entregas y sus 
 
 **Lección:** los tests y las pruebas con eventos simulados cubren la lógica, pero el camino completo con una cuenta real hay que recorrerlo antes de darlo por cerrado. Y hay que recorrerlo con el usuario, no por él: cada tropiezo suyo fue un defecto real.
 
+## El correo que Render no deja salir
+
+La misma prueba real dejó una segunda sorpresa: el Telegram llegó, la aprobación funcionó y el correo de bienvenida murió con `Connection timeout`. Ningún test lo habría visto, porque el nodo es correcto: es Render quien bloquea el puerto SMTP en el plan gratuito. La tentación era dar de alta un proveedor de correo transaccional. Elegí no abrir otra cuenta: Foodzinder vive en Vercel, que sí permite SMTP, y ya tenía una API privada con clave. Un endpoint de relevo de veinte líneas y una variable `EMAIL_TRANSPORT` en n8n bastaron. La lección es de arquitectura, no de n8n: cuando un servicio gratuito cierra una puerta, comprueba si otro que ya tienes la abre antes de sumar dependencias.
+
 ## Prompts dentro del producto
 
 Los prompts que se envían a Gemini viven en `src/lib/prompts.mjs`, no en los nodos, y tienen tests. Cada uno sigue la misma estructura:

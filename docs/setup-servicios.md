@@ -71,6 +71,7 @@ Una "contraseña de aplicación" es una clave de 16 letras que Google genera par
 4. Crear una clave de API para subir los flujos sin importarlos a mano: en el editor, **Settings → n8n API → Create an API key**, nombre `deploy`, copiarla al `.env` en `N8N_PUBLIC_API_KEY=`. Después, `node scripts/deploy-workflows.mjs` crea o actualiza los cinco flujos y los activa.
 5. No hay que crear credenciales en n8n: Telegram, Gemini y el correo se llaman con las variables de entorno. Registrar el webhook del bot con `node scripts/telegram-set-webhook.mjs --url https://foodzinder-n8n-6not.onrender.com/webhook/telegram`.
 6. En Vercel (Foodzinder), `WEBHOOK_URLS = https://foodzinder-n8n-6not.onrender.com/webhook/foodzinder`, Redeploy, y "Enviar evento de prueba" desde `/dashboard/admin/webhooks`.
+7. Correo desde Render: el plan gratuito bloquea el SMTP saliente, así que en Render → Environment se añade `EMAIL_TRANSPORT=foodzinder` y en Vercel (Foodzinder) las variables `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` y `EMAIL_FROM` con los mismos valores del `.env` de este proyecto, seguido de Redeploy. n8n compone el correo y Foodzinder lo envía por `POST /api/v1/admin/email`.
 
 ## 6. Túnel temporal para probar en local con eventos reales
 
