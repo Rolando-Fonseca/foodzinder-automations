@@ -50,6 +50,14 @@ Ninguno de los problemas de esta fase estaba en los flujos; todos estaban en el 
 
 **Lección:** desplegar en un plan gratuito es un ejercicio de lectura de logs. Cada tropiezo acabó como script o como variable documentada, para que la próxima persona no lo repita. Y cuando el sistema bloquea una acción destructiva, se le da al usuario el comando exacto: tardó un minuto.
 
+## La primera prueba real: lo que ningún test había visto
+
+Con todo desplegado, el usuario dio de alta un restaurante desde la web y no llegó nada a Telegram. En una hora aparecieron cuatro fallos que solo una persona real, con sesión real, podía provocar: el botón de alta llevaba al registro y Clerk devolvía al inicio a quien ya estaba identificado; el panel devolvía 500 porque el menú pasaba iconos (funciones) de un componente de servidor a uno de cliente; el middleware bloqueaba el formulario de alta a los usuarios sin rol de dueño, que son justo quienes lo necesitan; y las entregas de Foodzinder expiraron porque el autoping de n8n apuntaba a una variable de Render que el Blueprint nunca actualizó.
+
+Cada uno se localizó desde fuera con lo que había: la lista de entregas y sus errores por la API privada del P4, las ejecuciones del n8n leídas en la base de datos de Neon, y las consultas de la página ejecutadas a mano para el usuario real. El alta se aprobó finalmente desde Telegram pasando por el n8n público.
+
+**Lección:** los tests y las pruebas con eventos simulados cubren la lógica, pero el camino completo con una cuenta real hay que recorrerlo antes de darlo por cerrado. Y hay que recorrerlo con el usuario, no por él: cada tropiezo suyo fue un defecto real.
+
 ## Prompts dentro del producto
 
 Los prompts que se envían a Gemini viven en `src/lib/prompts.mjs`, no en los nodos, y tienen tests. Cada uno sigue la misma estructura:
