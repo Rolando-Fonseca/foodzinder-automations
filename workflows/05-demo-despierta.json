@@ -45,6 +45,28 @@
     },
     {
       "parameters": {
+        "url": "={{ $env.WEBHOOK_URL || $env.N8N_WEBHOOK_URL || 'http://localhost:5678/' }}healthz",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "e0000000-0000-4000-8000-000000000007",
+      "name": "ping-n8n (mantener despierto Render)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        480
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
         "jsCode": "// Flujo 05, nodo \"evaluar-ping\": decide si la demo está caída y si toca avisar\n// (como mucho un aviso por hora, usando el estado guardado en el workflow).\n// Compartido: cuerpos para la Bot API de Telegram (parse_mode HTML).\n// @exports escapeHtml, tgMessage, tgEditMessage, splitTelegram\n\nfunction escapeHtml(s) {\n  return String(s == null ? \"\" : s).replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n}\n\n/** Cuerpo de sendMessage. buttons: [[{text, data}]] → teclado inline. */\nfunction tgMessage(chatId, html, buttons) {\n  const body = { chat_id: chatId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true };\n  if (buttons && buttons.length) {\n    body.reply_markup = { inline_keyboard: buttons.map((row) => row.map((b) => ({ text: b.text, callback_data: b.data }))) };\n  }\n  return body;\n}\n\n/** Cuerpo de editMessageText (quita los botones al confirmar una acción). */\nfunction tgEditMessage(chatId, messageId, html) {\n  return { chat_id: chatId, message_id: messageId, text: html, parse_mode: \"HTML\", disable_web_page_preview: true, reply_markup: { inline_keyboard: [] } };\n}\n\n/** Telegram limita a 4096 caracteres: parte por párrafos. */\nfunction splitTelegram(text, max) {\n  const limit = max || 4000;\n  if (text.length <= limit) return [text];\n  const chunks = [];\n  let current = \"\";\n  for (const para of text.split(/\\n\\n+/)) {\n    if ((current + \"\\n\\n\" + para).length > limit && current) {\n      chunks.push(current);\n      current = para;\n    } else current = current ? current + \"\\n\\n\" + para : para;\n  }\n  if (current) chunks.push(current);\n  return chunks.flatMap((c) => (c.length <= limit ? [c] : c.match(new RegExp(`[\\\\s\\\\S]{1,${limit}}`, \"g\"))));\n}\nfunction run(item, state, env, now) {\n  const r = item.json || {};\n  const ok = r.success === true && Array.isArray(r.data);\n  const ts = (now || new Date()).getTime();\n  const lastAlert = state.lastAlertAt || 0;\n  const shouldAlert = !ok && ts - lastAlert > 60 * 60 * 1000;\n  const text = ok ? null : `⚠️ <b>Foodzinder no responde</b>\\n${escapeHtml(r.error || r.message || \"sin respuesta válida de /api/v1/restaurants\")}\\n${(env.FOODZINDER_BASE_URL || \"\")}`;\n  return [{\n    json: {\n      ok,\n      shouldAlert,\n      nextState: { lastAlertAt: shouldAlert ? ts : lastAlert, lastOkAt: ok ? ts : state.lastOkAt || null },\n      telegramBody: shouldAlert ? tgMessage(env.TELEGRAM_ADMIN_CHAT_ID, text) : null,\n      checkedAt: new Date(ts).toISOString(),\n    },\n  }];\n}\n\nconst st = $getWorkflowStaticData(\"global\");\nconst out = run($input.first(), st, $env, new Date());\nObject.assign(st, out[0].json.nextState);\nreturn out; // @n8n-invoke\n"
       },
       "id": "e0000000-0000-4000-8000-000000000003",
@@ -127,6 +149,11 @@
         [
           {
             "node": "ping-foodzinder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "ping-n8n (mantener despierto Render)",
             "type": "main",
             "index": 0
           }

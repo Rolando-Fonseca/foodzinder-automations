@@ -51,6 +51,9 @@ services:
         sync: false
       - key: N8N_ENCRYPTION_KEY
         sync: false
+      # Sin disco persistente, n8n regenera este secreto en cada arranque y caducan sesiones y claves de API
+      - key: N8N_USER_MANAGEMENT_JWT_SECRET
+        sync: false
       - key: FOODZINDER_BASE_URL
         value: https://foodzinder.vercel.app
       - key: FOODZINDER_API_KEY

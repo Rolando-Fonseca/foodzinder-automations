@@ -21,6 +21,18 @@
       "position": [240, 300],
       "onError": "continueRegularOutput"
     },
+    {
+      "parameters": {
+        "url": "={{ $env.WEBHOOK_URL || $env.N8N_WEBHOOK_URL || 'http://localhost:5678/' }}healthz",
+        "options": { "timeout": 30000, "response": { "response": { "neverError": true } } }
+      },
+      "id": "e0000000-0000-4000-8000-000000000007",
+      "name": "ping-n8n (mantener despierto Render)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 480],
+      "onError": "continueRegularOutput"
+    },
     { "parameters": { "jsCode": "{{code:evaluar-ping}}" }, "id": "e0000000-0000-4000-8000-000000000003", "name": "evaluar-ping", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 300] },
     {
       "parameters": {
@@ -51,7 +63,7 @@
     { "parameters": {}, "id": "e0000000-0000-4000-8000-000000000006", "name": "todo bien", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [960, 400] }
   ],
   "connections": {
-    "Cada 10 min (8-22h)": { "main": [[{ "node": "ping-foodzinder", "type": "main", "index": 0 }]] },
+    "Cada 10 min (8-22h)": { "main": [[{ "node": "ping-foodzinder", "type": "main", "index": 0 }, { "node": "ping-n8n (mantener despierto Render)", "type": "main", "index": 0 }]] },
     "ping-foodzinder": { "main": [[{ "node": "evaluar-ping", "type": "main", "index": 0 }]] },
     "evaluar-ping": { "main": [[{ "node": "¿avisar?", "type": "main", "index": 0 }]] },
     "¿avisar?": { "main": [[{ "node": "telegram-aviso-caida", "type": "main", "index": 0 }], [{ "node": "todo bien", "type": "main", "index": 0 }]] }

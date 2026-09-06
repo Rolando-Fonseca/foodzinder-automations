@@ -17,6 +17,7 @@ const vars = {
   DB_POSTGRESDB_USER: neon ? decodeURIComponent(neon.username) : undefined,
   DB_POSTGRESDB_PASSWORD: neon ? decodeURIComponent(neon.password) : undefined,
   N8N_ENCRYPTION_KEY: process.env.N8N_ENCRYPTION_KEY,
+  N8N_USER_MANAGEMENT_JWT_SECRET: process.env.N8N_USER_MANAGEMENT_JWT_SECRET,
   FOODZINDER_API_KEY: process.env.FOODZINDER_API_KEY,
   FOODZINDER_WEBHOOK_SECRET: process.env.FOODZINDER_WEBHOOK_SECRET,
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
