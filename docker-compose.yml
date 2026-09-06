@@ -15,7 +15,7 @@ services:
       retries: 10
 
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:1.95.3
     ports:
       # Puerto del host configurable; dentro del contenedor n8n siempre escucha en 5678
       - "${N8N_HOST_PORT:-5679}:5678"

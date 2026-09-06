@@ -2,14 +2,19 @@
 # Las variables marcadas sync:false se rellenan en el panel de Render al crear el servicio.
 services:
   - type: web
-    name: foodzinder-n8n-6not
+    name: foodzinder-n8n
     runtime: image
     image:
-      url: docker.io/n8nio/n8n:latest
+      # Misma versión que en local (docker-compose): probada y ligera. `latest` (2.x) se queda sin
+      # memoria en la instancia gratuita de 512 MB (heap out of memory a los dos minutos).
+      url: docker.io/n8nio/n8n:1.95.3
     plan: free
     region: frankfurt
     healthCheckPath: /healthz
     envVars:
+      # Límite de heap explícito para Node en 512 MB de RAM
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=384
       - key: N8N_PORT
         value: "10000"
       - key: N8N_PROTOCOL
