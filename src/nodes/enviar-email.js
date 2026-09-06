@@ -44,10 +44,24 @@ async function run(item, env, nodemailer, fetchImpl) {
   return [{ json: { ...e, result: `enviado a ${email.to} (${info.messageId || "sin id"})` } }];
 }
 
+// El sandbox del nodo Code no expone fetch; this.helpers.httpRequest sí existe.
+// Adaptador con la misma forma mínima de Response que usa sendViaFoodzinder.
+function fetchConHelpers(helpers) {
+  return async (url, init) => {
+    try {
+      const res = await helpers.httpRequest({ method: init.method, url, headers: init.headers, body: JSON.parse(init.body), json: true, returnFullResponse: true });
+      return { ok: true, status: res.statusCode, json: async () => res.body };
+    } catch (err) {
+      const status = Number(err.httpCode) || 0;
+      return { ok: false, status, json: async () => ({ error: err.description || err.message }) };
+    }
+  };
+}
+
 let mailer = null;
 try {
   mailer = require("nodemailer");
 } catch (err) {
   mailer = null;
 }
-return await run($input.first(), $env, mailer, fetch); // @n8n-invoke
+return await run($input.first(), $env, mailer, typeof fetch === "function" ? fetch : fetchConHelpers(this.helpers)); // @n8n-invoke
