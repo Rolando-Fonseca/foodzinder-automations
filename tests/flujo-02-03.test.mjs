@@ -104,6 +104,20 @@ describe("nodo enviar-email", () => {
     expect((await run(item, { SMTP_HOST: "h", SMTP_USER: "u", SMTP_PASSWORD: "p" }, null))[0].json.result).toContain("nodemailer no disponible");
   });
 
+  it("con EMAIL_TRANSPORT=foodzinder envía por el relevo de la API privada", async () => {
+    const calls = [];
+    const fakeFetch = async (url, init) => (calls.push({ url, init }), { ok: true, status: 200, json: async () => ({ success: true, data: { messageId: "relay-1" } }) });
+    const env = { EMAIL_TRANSPORT: "foodzinder", FOODZINDER_BASE_URL: "https://foodzinder.vercel.app/", FOODZINDER_API_KEY: "k" };
+    const out = await run(item, env, null, fakeFetch);
+    expect(out[0].json.result).toBe("enviado a a@b.c vía Foodzinder (relay-1)");
+    expect(calls[0].url).toBe("https://foodzinder.vercel.app/api/v1/admin/email");
+    expect(calls[0].init.headers["x-api-key"]).toBe("k");
+    expect(JSON.parse(calls[0].init.body)).toMatchObject({ to: "a@b.c", subject: "s" });
+    const failing = async () => ({ ok: false, status: 403, json: async () => ({ success: false, error: "no configurado" }) });
+    expect((await run(item, env, null, failing))[0].json.result).toBe("fallo relevo (403): no configurado");
+    expect((await run(item, { EMAIL_TRANSPORT: "foodzinder" }, null, fakeFetch))[0].json.result).toContain("falta FOODZINDER_API_KEY");
+  });
+
   it("envía con nodemailer usando las variables de entorno", async () => {
     const sent = [];
     const fake = { createTransport: (cfg) => ({ sendMail: async (msg) => (sent.push({ cfg, msg }), { messageId: "id-1" }) }) };

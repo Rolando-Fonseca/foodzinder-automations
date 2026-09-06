@@ -1,7 +1,10 @@
-// Nodo "enviar-email": SMTP con nodemailer (viene con n8n) y variables de
-// entorno, sin credenciales guardadas en el editor. Requiere
-// NODE_FUNCTION_ALLOW_EXTERNAL=nodemailer. Si falta configuración SMTP, no
-// falla: marca el envío como omitido para que el flujo termine y se vea por qué.
+// Nodo "enviar-email". Dos transportes, elegidos con EMAIL_TRANSPORT:
+//  - "smtp" (por defecto): nodemailer (viene con n8n) con las variables SMTP_*.
+//    Requiere NODE_FUNCTION_ALLOW_EXTERNAL=nodemailer. Funciona en local.
+//  - "foodzinder": el plan gratuito de Render bloquea el SMTP saliente, así que
+//    n8n compone el correo y lo envía por el relevo POST /api/v1/admin/email
+//    de Foodzinder (Vercel), con la clave FOODZINDER_API_KEY.
+// Si falta configuración, no falla: deja el envío como omitido y el motivo.
 function buildTransportConfig(env) {
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASSWORD) return null;
   const port = Number(env.SMTP_PORT || 465);
@@ -12,10 +15,27 @@ function buildMessage(email, env) {
   return { from: env.EMAIL_FROM || env.SMTP_USER, to: email.to, subject: email.subject, text: email.text, html: email.html };
 }
 
-async function run(item, env, nodemailer) {
+async function sendViaFoodzinder(email, env, fetchImpl) {
+  const base = (env.FOODZINDER_BASE_URL || "https://foodzinder.vercel.app").replace(/\/+$/, "");
+  if (!env.FOODZINDER_API_KEY) return "omitido: falta FOODZINDER_API_KEY para el relevo de correo";
+  const res = await fetchImpl(`${base}/api/v1/admin/email`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": env.FOODZINDER_API_KEY },
+    body: JSON.stringify({ to: email.to, subject: email.subject, html: email.html, text: email.text }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.success) return `fallo relevo (${res.status}): ${(json && json.error) || "sin detalle"}`;
+  return `enviado a ${email.to} vía Foodzinder (${(json.data && json.data.messageId) || "sin id"})`;
+}
+
+async function run(item, env, nodemailer, fetchImpl) {
   const e = item.json;
   const email = e.email;
   if (!email || !email.to) return [{ json: { ...e, result: "omitido: sin destinatario" } }];
+
+  if ((env.EMAIL_TRANSPORT || "smtp") === "foodzinder") {
+    return [{ json: { ...e, result: await sendViaFoodzinder(email, env, fetchImpl) } }];
+  }
   const cfg = buildTransportConfig(env);
   if (!cfg) return [{ json: { ...e, result: "omitido: SMTP sin configurar (SMTP_HOST, SMTP_USER, SMTP_PASSWORD)" } }];
   if (!nodemailer) return [{ json: { ...e, result: "omitido: nodemailer no disponible (NODE_FUNCTION_ALLOW_EXTERNAL=nodemailer)" } }];
@@ -30,4 +50,4 @@ try {
 } catch (err) {
   mailer = null;
 }
-return await run($input.first(), $env, mailer); // @n8n-invoke
+return await run($input.first(), $env, mailer, fetch); // @n8n-invoke

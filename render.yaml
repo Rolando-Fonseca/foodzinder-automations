@@ -64,6 +64,9 @@ services:
         sync: false
       - key: TELEGRAM_ADMIN_CHAT_ID
         sync: false
+      # Render free bloquea SMTP saliente: el correo sale por el relevo de Foodzinder (Vercel)
+      - key: EMAIL_TRANSPORT
+        value: foodzinder
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
