@@ -2,7 +2,7 @@
 # Las variables marcadas sync:false se rellenan en el panel de Render al crear el servicio.
 services:
   - type: web
-    name: foodzinder-n8n
+    name: foodzinder-n8n-6not
     runtime: image
     image:
       url: docker.io/n8nio/n8n:latest
