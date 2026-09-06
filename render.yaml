@@ -15,9 +15,9 @@ services:
       - key: N8N_PROTOCOL
         value: https
       - key: N8N_HOST
-        value: foodzinder-n8n.onrender.com
+        value: foodzinder-n8n-6not.onrender.com
       - key: WEBHOOK_URL
-        value: https://foodzinder-n8n.onrender.com/
+        value: https://foodzinder-n8n-6not.onrender.com/
       - key: GENERIC_TIMEZONE
         value: Europe/Madrid
       - key: NODE_FUNCTION_ALLOW_BUILTIN

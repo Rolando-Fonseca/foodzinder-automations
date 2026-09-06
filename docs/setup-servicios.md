@@ -14,9 +14,8 @@ Crear el fichero copiando `.env.example` y editándolo con el editor de texto o 
    ```bash
    openssl rand -hex 32
    ```
-2. Poner una contraseña en `N8N_BASIC_AUTH_PASSWORD`.
-3. Copiar de Vercel (proyecto Foodzinder → Settings → Environment Variables) los valores de `FOODZINDER_API_KEY` y `WEBHOOK_SECRET` a `FOODZINDER_API_KEY` y `FOODZINDER_WEBHOOK_SECRET`.
-4. `npm run n8n:up` y abrir http://localhost:5678. La primera vez n8n pide crear el usuario propietario del editor.
+2. Copiar de Vercel (proyecto Foodzinder → Settings → Environment Variables) los valores de `FOODZINDER_API_KEY` y `WEBHOOK_SECRET` a `FOODZINDER_API_KEY` y `FOODZINDER_WEBHOOK_SECRET`.
+3. `npm run n8n:up` y abrir http://localhost:5679 (el 5678 se deja libre por si hay otro n8n). La primera vez n8n pide crear el usuario propietario del editor.
 
 ## 2. Bot de Telegram (5 minutos)
 
@@ -68,14 +67,15 @@ Una "contraseña de aplicación" es una clave de 16 letras que Google genera par
 
 1. En Neon, proyecto `foodzinder` → menú **Branches** → rama principal → pestaña **Databases** → **Add database** → nombre `n8n`, owner el propuesto → **Create**. Después, botón **Connect** (arriba a la derecha): elegir la base `n8n` en el desplegable, **desactivar** "Connection pooling" (el host no debe llevar `-pooler`) y copiar la cadena. Pegarla en el `.env` como `N8N_NEON_URL=postgresql://…`; `node scripts/neon-vars.mjs` la trocea en las cuatro variables `DB_POSTGRESDB_*` que pide Render y comprueba la conexión.
 2. En Render, **New → Blueprint**, conectar el repo `foodzinder-automations`; lee `render.yaml`. Rellenar las variables marcadas como `sync: false` con los valores del `.env` (los de Neon en `DB_POSTGRESDB_*`).
-3. Cuando arranque, abrir `https://foodzinder-n8n.onrender.com`, crear el usuario propietario e importar los JSON de `workflows/`.
-4. Activar los flujos. No hay que crear credenciales en n8n: Telegram, Gemini y el correo se llaman con las variables de entorno. Registrar el webhook del bot con `node scripts/telegram-set-webhook.mjs --url https://foodzinder-n8n.onrender.com/webhook/telegram`.
-5. En Vercel (Foodzinder), `WEBHOOK_URLS = https://foodzinder-n8n.onrender.com/webhook/foodzinder`, Redeploy, y "Enviar evento de prueba" desde `/dashboard/admin/webhooks`.
+3. Cuando arranque, abrir `https://foodzinder-n8n-6not.onrender.com` y crear el usuario propietario (correo y contraseña; es la cuenta del editor, no de n8n.io). Render añadió el sufijo `-6not` al nombre: `render.yaml` ya lleva esa URL en `N8N_HOST` y `WEBHOOK_URL`.
+4. Crear una clave de API para subir los flujos sin importarlos a mano: en el editor, **Settings → n8n API → Create an API key**, nombre `deploy`, copiarla al `.env` en `N8N_PUBLIC_API_KEY=`. Después, `node scripts/deploy-workflows.mjs` crea o actualiza los cinco flujos y los activa.
+5. No hay que crear credenciales en n8n: Telegram, Gemini y el correo se llaman con las variables de entorno. Registrar el webhook del bot con `node scripts/telegram-set-webhook.mjs --url https://foodzinder-n8n-6not.onrender.com/webhook/telegram`.
+6. En Vercel (Foodzinder), `WEBHOOK_URLS = https://foodzinder-n8n-6not.onrender.com/webhook/foodzinder`, Redeploy, y "Enviar evento de prueba" desde `/dashboard/admin/webhooks`.
 
-## 6. Túnel temporal para probar en local con eventos reales (Fase 1)
+## 6. Túnel temporal para probar en local con eventos reales
 
 ```bash
-npx cloudflared tunnel --url http://localhost:5678
+npx cloudflared tunnel --url http://localhost:5679
 ```
 
 Da una URL `https://….trycloudflare.com` válida mientras el comando esté abierto. Ponerla en `WEBHOOK_URLS` de Vercel como `https://….trycloudflare.com/webhook/foodzinder` solo para la prueba, y quitarla después.
