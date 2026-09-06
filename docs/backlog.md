@@ -56,7 +56,8 @@ Verificación hecha: disparo manual en local → informe redactado con las cifra
 - [x] Base `n8n` en Neon y servicio en Render: https://foodzinder-n8n-6not.onrender.com (n8n 1.95.3 fijado y límite de heap; ver nota en ADR-0001). La base hubo que recrearla porque la imagen `latest` había aplicado migraciones de una versión más nueva.
 - [x] Flujos subidos y activados por la API pública de n8n (`scripts/deploy-workflows.mjs`). La WAF de Render bloqueaba el JSON por el patrón `prompt, {`; la variable pasó a llamarse `instrucciones`. Sin credenciales en n8n: todo por variables de entorno.
 - [x] Webhook del bot de Telegram apuntando al n8n público; evento firmado de prueba recibido y ejecutado en verde.
-- [ ] `WEBHOOK_URLS` de Foodzinder apuntando al n8n de Render; evento de prueba desde el panel de Foodzinder y alta real de restaurante.
+- [x] `WEBHOOK_URLS` de Foodzinder apuntando al n8n de Render; evento de prueba emitido por el Foodzinder de producción y ejecutado en el n8n público. Dos tropiezos resueltos y anotados: la instancia dormida hacía expirar los tres intentos (P4 reintenta ahora a 2, 6 y 30 s con 7 s de timeout y el flujo 05 mantiene despierto n8n), y el secreto JWT se regeneraba en cada arranque (fijado con `N8N_USER_MANAGEMENT_JWT_SECRET`).
+- [ ] Alta real de restaurante desde la web con aprobación desde Telegram vía n8n público (prueba de la demo).
 - [ ] CI: tests y `npm run check` en cada push.
 - [ ] README con URLs (n8n público, repo, Foodzinder).
 

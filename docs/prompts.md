@@ -38,6 +38,18 @@ Tres cambios salieron de ahí: la guía explica qué es BotFather (un chat, con 
 
 **Lección:** la frustración del usuario que "sigue cada paso y no funciona" casi siempre señala un paso que la documentación daba por obvio. Se arregla en la guía y con una herramienta, no explicándolo otra vez en el chat.
 
+## Fase 5: el despliegue, cinco obstáculos que no eran código
+
+Ninguno de los problemas de esta fase estaba en los flujos; todos estaban en el entorno, y cada uno se leyó en una línea de log o en una respuesta HTTP:
+
+1. **Host de Neon pegado con la cola de la cadena** (`ENOTFOUND …/n8n?sslmode=…`): variable mal copiada. Salió un script que trocea la cadena y comprueba la conexión antes de tocar Render.
+2. **`heap out of memory` a los dos minutos**: la imagen `latest` de n8n no cabe en 512 MB. Se fijó la versión probada en local y un límite de heap.
+3. **`column User.role does not exist`**: la imagen nueva había migrado la base de datos a su esquema antes de fijar la versión. Se recreó la base vacía (el sistema bloqueó el `DROP SCHEMA` desde la IA; lo hizo el usuario desde Neon).
+4. **`403 Blocked` al subir los flujos por API**: la protección de Render (Cloudflare) rechazaba el JSON. Una bisección automática por nodos, líneas y caracteres, con pausas para no confundir contenido con ritmo, aisló el fragmento `prompt, {`, que se parece a un ataque XSS. Renombrar una variable bastó.
+5. **Entregas agotadas y clave de API caducada tras dormir**: la instancia gratuita se duerme y tarda 50 s en despertar, y sin disco regenera el secreto de sesiones. Reintentos del P4 alargados, autoping del flujo 05 y secreto fijo por variable.
+
+**Lección:** desplegar en un plan gratuito es un ejercicio de lectura de logs. Cada tropiezo acabó como script o como variable documentada, para que la próxima persona no lo repita. Y cuando el sistema bloquea una acción destructiva, se le da al usuario el comando exacto: tardó un minuto.
+
 ## Prompts dentro del producto
 
 Los prompts que se envían a Gemini viven en `src/lib/prompts.mjs`, no en los nodos, y tienen tests. Cada uno sigue la misma estructura:

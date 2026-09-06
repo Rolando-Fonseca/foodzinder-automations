@@ -2,7 +2,7 @@
 
 Capa de automatización con **n8n e IA** sobre [Foodzinder](https://github.com/Rolando-Fonseca/sesi-n-10---Directorio-de-restaurantes---pr-ctica), el directorio de restaurantes del P4. Proyecto **P5** del módulo (Sesión 17: automatización de procesos con n8n e IA).
 
-> **n8n:** pendiente de despliegue · **Foodzinder (P4):** https://foodzinder.vercel.app · **Docs:** [arquitectura](docs/architecture.md) · [flujos](docs/flujos.md) · [ADRs](docs/adr/) · [ingeniería de contexto](docs/prompts.md) · [changelog](CHANGELOG.md)
+> **n8n público:** https://foodzinder-n8n-6not.onrender.com · **Foodzinder (P4):** https://foodzinder.vercel.app · **Repo:** https://github.com/Rolando-Fonseca/foodzinder-automations · **Docs:** [arquitectura](docs/architecture.md) · [flujos](docs/flujos.md) · [ADRs](docs/adr/) · [ingeniería de contexto](docs/prompts.md) · [changelog](CHANGELOG.md)
 
 ## Qué automatiza
 
@@ -54,7 +54,7 @@ docker compose exec -T n8n n8n update:workflow --id=<id> --active=true && docker
 | 2 | Flujos 1 y 5 (aprobación asistida y demo despierta) | Hecha, verificada en local hasta Telegram |
 | 3 | Flujos 2 y 3 (bienvenida y reseña negativa) con IA | Hecha, verificada en local hasta el envío de correo |
 | 4 | Flujo 4 (informe semanal) | Hecha, informe generado con cifras reales |
-| 5 | Despliegue en Render con Neon, Foodzinder apuntando al n8n público | Pendiente (bot de Telegram, Gmail, Neon y Render) |
+| 5 | Despliegue en Render con Neon, Foodzinder apuntando al n8n público | Hecha: eventos de producción recibidos y aprobación desde Telegram probada |
 | 6 | Demo y presentación | Guion en [docs/demo.md](docs/demo.md) |
 
 Tests: 45 sobre el mismo código que corre en los nodos. CI: [GitHub Actions](https://github.com/Rolando-Fonseca/foodzinder-automations/actions).

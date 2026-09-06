@@ -2,7 +2,18 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/). Versionado semántico.
 
-## [Unreleased]
+## [1.0.0] - 2026-09-06
+
+Primera versión desplegada: https://foodzinder-n8n-6not.onrender.com, conectada a https://foodzinder.vercel.app.
+
+### Añadido
+- Despliegue en Render (n8n 1.95.3 fijado, límite de heap, secreto JWT fijo) con la base de datos en Neon; flujos subidos por la API pública con `scripts/deploy-workflows.mjs`; webhook del bot de Telegram apuntando al n8n público; autoping para que la instancia gratuita no duerma en horario de demo.
+- Scripts de apoyo para la puesta en marcha: `telegram-set-webhook.mjs --chat-id`, `send-test-email.mjs`, `neon-vars.mjs`, `render-vars.mjs`.
+
+### Corregido
+- La protección de Render bloqueaba la subida de flujos por el patrón `prompt, {` en el código de los nodos: la variable pasa a llamarse `instrucciones`.
+
+## [0.3.0] - 2026-09-05
 
 ### Añadido
 - Informe semanal (flujo 04): cron de los lunes y disparador manual, cifras y reseñas por la API privada, redacción con Gemini y envío a Telegram por partes.
